@@ -29,7 +29,7 @@
         .status-block { padding: 15px; border-top: 1px solid #334155; font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #64748b; border-radius: 50%; display: inline-block; transition: all 0.3s ease; }
 
-        main { flex: 1; height: 100%; padding: 32px; overflow-y: auto; position: relative; background-color: #0f172a; transition: margin-right 0.3s ease; z-index: 1; }
+        main { flex: 1; height: 100%; padding: 32px; overflow-y: auto; position: relative; background-color: #0f172a; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; position: relative; z-index: 5; border-bottom: 1px solid #334155; padding-bottom: 20px; }
         header h2 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
         header p { font-size: 0.875rem; color: #94a3b8; margin-top: 2px; }
@@ -63,10 +63,27 @@
         
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
-        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; }
+        /* GRIDS DE GRÁFICOS DINÂMICOS E RESPONSIVOS */
+        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; transition: all 0.3s ease; }
         .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; }
-        @media(max-width: 1400px) { .chart-grid-3x1 { grid-template-columns: 1fr; } }
-        @media(max-width: 1024px) { .chart-grid-2x2 { grid-template-columns: 1fr; } }
+        
+        /* AJUSTE DINÂMICO CRUCIAL: Quando a classe 'admin-open' for injetada no body, a aba produção quebra em colunas visíveis de forma adaptável */
+        body.admin-open .chart-grid-3x1 {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        body.admin-open .chart-grid-3x1 > :last-child {
+            grid-column: span 2; /* Faz o terceiro gráfico ocupar a linha inteira de baixo quando comprimido */
+        }
+
+        @media(max-width: 1400px) { 
+            .chart-grid-3x1 { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid-3x1 > :last-child { grid-column: span 2; }
+        }
+        @media(max-width: 1024px) { 
+            .chart-grid-3x1 { grid-template-columns: 1fr !important; }
+            .chart-grid-3x1 > :last-child { grid-column: span 1 !important; }
+            .chart-grid-2x2 { grid-template-columns: 1fr; } 
+        }
         
         .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; min-height: 340px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
         .chart-container h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 16px; }
@@ -168,7 +185,7 @@
         .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
     </style>
 </head>
-<body>
+<body id="app-body">
 
     <aside>
         <div>
@@ -484,7 +501,7 @@
         document.getElementById('adminContractInput').value = contractAddress !== "0x0000000000000000000000000000000000000000" ? contractAddress : "";
         document.getElementById('adminWalletInput').value = adminWalletAddress !== "0x0000000000000000000000000000000000000000" ? adminWalletAddress : "";
 
-        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3
+        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3 (EXATAMENTE COMO O SEU CONTRATO SOLIDITY PEDE)
         const contratoABI = [
             "function registrarPassagem(string memory _chassi, string memory _posto, string memory _operador, bool _statusSucesso) public",
             "function alterarStatusOperador(string memory _operador, bool _entrou) public",
@@ -495,22 +512,23 @@
             return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
         }
 
-        // GERENCIAMENTO VISUAL DO PAINEL ADMIN
+        // GERENCIAMENTO VISUAL DO PAINEL ADMIN E INTEGRAÇÃO DE LAYOUT ADAPTÁVEL
         function tentarAcessarAdmin() {
             const user = prompt("Digite o Usuário Administrador:");
             const pass = prompt("Digite a Senha Administrador:");
             if (user === "admin" && pass === "admin") {
                 document.getElementById('admin-modal').classList.add('open');
                 document.getElementById('main-content').style.marginRight = '480px'; 
+                document.getElementById('app-body').classList.add('admin-open'); // ATIVA AJUSTE DE COLUNAS DA ABA PRODUÇÃO
             } else {
                 alert("🔒 Acesso negado!");
             }
         }
 
-        // CONEXÃO DE BOOTSTRAP COM A METAMASK
         function fecharModalAdmin() {
             document.getElementById('admin-modal').classList.remove('open');
             document.getElementById('main-content').style.marginRight = '0px';
+            document.getElementById('app-body').classList.remove('admin-open'); // DESATIVA AJUSTE DE COLUNAS
         }
 
         async function conectarBlockchain() {
@@ -565,7 +583,7 @@
             }
         }
 
-        // 2. SIMULAR PASSAGEM DE PEÇA INTEGRADO À METAMASK (VERSÃO CORRIGIDA COM TIPOS ESTREITOS)
+        // 2. SIMULAR PASSAGEM DE PEÇA (TRATAMENTO DE TIPAGEM ESTREITA COMPATÍVEL COM SEU SMART CONTRACT)
         async function simularPassagemPeca(posto) {
             const contractAddress = localStorage.getItem('web3_contract_address');
             
@@ -583,13 +601,18 @@
                     const signer = await provider.getSigner();
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
 
-                    // Garante a conversão correta dos tipos primitivos para o Solidity
+                    // Criação de variáveis com tipagem limpa antes de enviar para o Ethers v6
                     const chassiAleatorio = String(gerarNovoChassi());
                     const nomePosto = String(posto);
                     const nomeOperador = "Op_Linha";
-                    const statusSucesso = (posto !== 'reparo'); // Se for reparo o booleano é explicitamente false
+                    
+                    // Definição explícita do boolean exigido pelo seu contract (true se for diferente de 'reparo')
+                    let statusSucesso = true;
+                    if (posto === 'reparo') {
+                        statusSucesso = false;
+                    }
 
-                    // Executa a chamada Web3 limpa
+                    // Envio limpo e estruturado para evitar erros de Gas Estimation no Solidity
                     const tx = await contrato.registrarPassagem(chassiAleatorio, nomePosto, nomeOperador, statusSucesso);
                     
                     document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
@@ -640,7 +663,7 @@
                     console.error("Erro detalhado da transação:", error);
                     document.getElementById('blockchain-status-text').innerText = "Erro Web3";
                     document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
-                    alert("Falha ao registrar dados operacionais na Blockchain.");
+                    alert("Falha ao registrar dados operacionais na Blockchain. Verifique se a rede Sepolia está ativa na MetaMask.");
                 }
             }
         }
