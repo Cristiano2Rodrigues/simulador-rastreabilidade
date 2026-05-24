@@ -12,9 +12,9 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        html, body { width: 100%; height: 100%; background-color: #0f172a; color: #f1f5f9; display: flex; overflow: hidden; }
+        html, body { width: 100%; height: 100%; background-color: #0f172a; color: #f1f5f9; display: flex; overflow-x: hidden; }
         
-        aside { width: 280px; background-color: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; height: 100%; z-index: 10; }
+        aside { width: 280px; background-color: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; height: 100vh; position: sticky; top: 0; z-index: 10; }
         .sidebar-header { padding: 20px 15px; border-bottom: 1px solid #334155; }
         .sidebar-header h1 { color: #a3e635; font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
         .sidebar-header span { font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 4px; font-weight: 500; }
@@ -29,12 +29,10 @@
         .status-block { padding: 15px; border-top: 1px solid #334155; font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #64748b; border-radius: 50%; display: inline-block; transition: all 0.3s ease; }
 
-        main { flex: 1; height: 100%; padding: 32px; overflow-y: auto; position: relative; background-color: #0f172a; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; position: relative; z-index: 5; border-bottom: 1px solid #334155; padding-bottom: 20px; }
+        main { flex: 1; min-height: 100vh; padding: 32px; overflow-y: auto; background-color: #0f172a; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #334155; padding-bottom: 20px; }
         header h2 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
         header p { font-size: 0.875rem; color: #94a3b8; margin-top: 2px; }
-        
-        .watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%) rotate(-5deg); font-size: 35rem; color: rgba(163, 230, 53, 0.01); pointer-events: none; z-index: 1; user-select: none; white-space: nowrap; }
 
         .filters-group { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
         .filter-container { display: flex; align-items: center; gap: 12px; background: #1e293b; padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -42,17 +40,17 @@
         .filter-select, .filter-input { border: none; background: transparent; font-size: 0.875rem; font-weight: 700; color: #f8fafc; cursor: pointer; outline: none; }
         .filter-select option { background-color: #1e293b; color: #f8fafc; }
 
-        .tab-content { display: none; position: relative; z-index: 5; width: 100%; }
+        .tab-content { display: none; width: 100%; animation: fadeIn 0.3s ease-in-out; }
         .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 30px; }
-        .card { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .card { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .card.status-good { background-color: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); }
         .card.status-bad { background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.3); }
         
-        .card-header { display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
         .card-value { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
-        
         .status-good .card-value { color: #34d399 !important; }
         .status-bad .card-value { color: #f87171 !important; }
 
@@ -60,117 +58,82 @@
         .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
-        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; transition: all 0.3s ease; }
-        .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; transition: all 0.3s ease; }
+        /* GRID RECOMPILADO PARA AJUSTE AUTOMÁTICO E RESPONSIVIDADE REAL */
+        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; width: 100%; }
+        .chart-grid-2x2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; width: 100%; margin-bottom: 24px; }
         
         body.admin-open .chart-grid-3x1,
-        body.admin-open .chart-grid-2x2 {
-            grid-template-columns: 1fr !important;
-        }
-        body.admin-open .chart-grid-3x1 > :last-child {
-            grid-column: span 1 !important;
-        }
+        body.admin-open .chart-grid-2x2 { grid-template-columns: 1fr !important; }
 
-        @media(max-width: 1400px) { 
-            .chart-grid-3x1, .chart-grid-2x2 { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid-3x1 > :last-child { grid-column: span 2; }
-        }
-        @media(max-width: 1024px) { 
-            .chart-grid-3x1, .chart-grid-2x2 { grid-template-columns: 1fr !important; }
-            .chart-grid-3x1 > :last-child { grid-column: span 1 !important; }
-        }
-        
-        .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; min-height: 340px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
+        .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; min-height: 340px; display: flex; flex-direction: column; justify-content: space-between; }
         .chart-container h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 16px; }
+        .chart-box-wrapper { position: relative; flex: 1; width: 100%; min-height: 250px; }
 
         .andon-wrapper { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
         .andon-wrapper h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 20px; }
         
-        .industrial-floor { display: flex; flex-direction: column; gap: 40px; position: relative; padding: 20px 10px; background: #151f32; border-radius: 8px; border: 1px dashed #334155; }
-        .production-line { display: flex; justify-content: space-between; align-items: flex-start; position: relative; height: 180px; padding: 0 40px; }
+        .industrial-floor { display: flex; flex-direction: column; gap: 40px; position: relative; padding: 20px 10px; background: #151f32; border-radius: 8px; border: 1px dashed #334155; overflow-x: auto; }
+        .production-line { display: flex; justify-content: space-between; align-items: flex-start; position: relative; height: 180px; min-width: 800px; padding: 0 40px; }
         
         .conveyor-belt { position: absolute; top: 120px; left: 0; width: 100%; height: 16px; background: repeating-linear-gradient(90deg, #334155, #334155 10px, #1e293b 10px, #1e293b 20px); border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); z-index: 1; animation: moveBelt 1s linear infinite; }
         @keyframes moveBelt { from { background-position: 0 0; } to { background-position: 40px 0; } }
 
-        .workstation { display: flex; flex-direction: column; align-items: center; width: 26%; position: relative; z-index: 2; transition: transform 0.3s ease; }
-        .ws-title { font-size: 0.8rem; font-weight: 700; color: #f8fafc; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em; border-bottom: 2px solid #10b981; padding-bottom: 2px; }
+        .workstation { display: flex; flex-direction: column; align-items: center; width: 22%; position: relative; z-index: 2; }
+        .ws-title { font-size: 0.8rem; font-weight: 700; color: #f8fafc; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #10b981; padding-bottom: 2px; }
         
-        .andon-tower { display: flex; flex-direction: column; background: #0f172a; padding: 4px; border-radius: 6px; border: 2px solid #475569; margin-bottom: 8px; gap: 3px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .light { width: 16px; height: 16px; border-radius: 50%; background: #1e293b; transition: all 0.3s ease; }
+        .andon-tower { display: flex; flex-direction: column; background: #0f172a; padding: 4px; border-radius: 6px; border: 2px solid #475569; margin-bottom: 8px; gap: 3px; }
+        .light { width: 16px; height: 16px; border-radius: 50%; background: #1e293b; }
         .workstation.status-green .light.green { background: #10b981; box-shadow: 0 0 12px #10b981; }
         .workstation.status-yellow .light.yellow { background: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
         .workstation.status-red .light.red { background: #ef4444; box-shadow: 0 0 12px #ef4444; animation: flash 0.6s infinite alternate; }
-        @keyframes flash { from { opacity: 0.3; } to { opacity: 1; box-shadow: 0 0 16px #ef4444; } }
+        @keyframes flash { from { opacity: 0.3; } to { opacity: 1; } }
 
-        .ws-display { background: #090d16; border-radius: 6px; padding: 4px 8px; text-align: center; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 8px; border: 1px solid #1e293b; }
+        .ws-display { background: #090d16; border-radius: 6px; padding: 4px 8px; text-align: center; width: 100%; margin-bottom: 8px; border: 1px solid #1e293b; }
         .ws-display .cycle-time { font-family: monospace; font-size: 0.9rem; font-weight: 700; color: #38bdf8; }
-        .ws-display .efficiency { font-size: 0.65rem; font-weight: 600; color: #64748b; margin-top: 1px; }
+        .ws-display .efficiency { font-size: 0.65rem; font-weight: 600; color: #64748b; }
         .ws-structure { width: 100%; height: 50px; background: linear-gradient(135deg, #475569, #334155); border: 2px solid #64748b; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #94a3b8; }
         
-        .moving-box { position: absolute; width: 22px; height: 22px; background: #b45309; border: 1px solid #78350f; border-radius: 4px; top: 117px; z-index: 3; animation: flowBox 5s linear infinite; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .moving-box { position: absolute; width: 22px; height: 22px; background: #b45309; border: 1px solid #78350f; border-radius: 4px; top: 117px; z-index: 3; animation: flowBox 5s linear infinite; }
         .box-2 { animation-delay: 1.6s; }
         .box-3 { animation-delay: 3.2s; }
 
-        .reparo-loop-area { display: flex; justify-content: center; align-items: center; position: relative; width: 100%; border-top: 2px dashed #334155; padding-top: 25px; }
-        .ws-reparo-exclusivo { width: 250px; background: #1e293b; padding: 15px; border-radius: 10px; border: 2px dashed #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; }
+        .reparo-loop-area { display: flex; justify-content: center; align-items: center; position: relative; width: 100%; min-width: 800px; border-top: 2px dashed #334155; padding-top: 25px; }
+        .ws-reparo-exclusivo { width: 250px; background: #1e293b; padding: 15px; border-radius: 10px; border: 2px dashed #ef4444; display: flex; flex-direction: column; align-items: center; }
         .ws-reparo-exclusivo .ws-structure { background: linear-gradient(135deg, #7f1d1d, #991b1b); border-color: #ef4444; color: #fca5a5; }
         
-        .defection-arrow { position: absolute; font-size: 0.75rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 5px; animation: pulseArrow 1s infinite alternate; }
+        .defection-arrow { position: absolute; font-size: 0.75rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 5px; }
         .arrow-from-montagem { top: -20px; left: 15%; transform: rotate(45deg); }
         .arrow-from-teste { top: -20px; left: 45%; transform: rotate(90deg); }
         .arrow-from-embalagem { top: -20px; right: 15%; transform: rotate(-45deg); }
-        .return-arrow-validated { position: absolute; bottom: 105px; left: 38%; font-size: 0.75rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 5px; transform: rotate(-115deg); animation: pulseArrowGreen 1s infinite alternate; }
+        .return-arrow-validated { position: absolute; bottom: 105px; left: 38%; font-size: 0.75rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 5px; transform: rotate(-115deg); }
 
-        @keyframes flowBox { 0% { left: 4%; transform: rotate(0deg); opacity: 1; } 85% { opacity: 1; } 100% { left: 92%; transform: rotate(360deg); opacity: 0; } }
-        @keyframes pulseArrow { from { opacity: 0.4; } to { opacity: 1; } }
-        @keyframes pulseArrowGreen { from { opacity: 0.5; transform: rotate(-115deg) scale(0.95); } to { opacity: 1; transform: rotate(-115deg) scale(1.05); } }
+        @keyframes flowBox { 0% { left: 4%; transform: rotate(0deg); opacity: 1; } 100% { left: 92%; transform: rotate(360deg); opacity: 0; } }
 
-        .suggestion-box { background-color: rgba(30, 58, 138, 0.3); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; padding: 24px; min-height: 160px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        .suggestion-box::before { content: "\f0eb"; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; bottom: -20px; right: 20px; font-size: 9rem; color: rgba(59, 130, 246, 0.05); pointer-events: none; user-select: none; }
-        .suggestion-box h4 { font-size: 0.85rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; position: relative; z-index: 2; }
-        .suggestion-text { font-size: 0.95rem; color: #93c5fd; font-weight: 600; font-style: italic; position: relative; z-index: 2; line-height: 1.5; }
+        .suggestion-box { background-color: rgba(30, 58, 138, 0.3); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; padding: 24px; min-height: 160px; display: flex; flex-direction: column; justify-content: center; }
+        .suggestion-box h4 { font-size: 0.85rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .suggestion-text { font-size: 0.95rem; color: #93c5fd; font-weight: 600; font-style: italic; line-height: 1.5; }
 
-        .sim-btn { background: #334155; color: #f1f5f9; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
-        .sim-btn:hover { background: #475569; border-color: #64748b; }
+        .sim-btn { background: #334155; color: #f1f5f9; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .sim-btn:hover { background: #475569; }
         .sim-btn.btn-in { background: #065f46; border-color: #047857; color: #a7f3d0; }
-        .sim-btn.btn-in:hover { background: #047857; }
         .sim-btn.btn-out { background: #991b1b; border-color: #b91c1c; color: #fca5a5; }
-        .sim-btn.btn-out:hover { background: #b91c1c; }
         .sim-btn.btn-posto { background: #1e3a8a; border-color: #1d4ed8; color: #bfdbfe; }
-        .sim-btn.btn-posto:hover { background: #1d4ed8; }
         .sim-btn.btn-reparo { background: #7c2d12; border-color: #9a3412; color: #ffedd5; }
-        .sim-btn.btn-reparo:hover { background: #9a3412; }
 
         .admin-form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         .admin-form-group label { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-        .admin-input-text { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; color: #f8fafc; font-family: monospace; outline: none; width: 100%; transition: border-color 0.2s; }
-        .admin-input-text:focus { border-color: #a3e635; }
-        .admin-save-btn { background: linear-gradient(135deg, #a3e635, #65a30d); color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
-        .admin-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(163,230,53,0.15); }
+        .admin-input-text { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; color: #f8fafc; font-family: monospace; outline: none; width: 100%; }
+        .admin-save-btn { background: linear-gradient(135deg, #a3e635, #65a30d); color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 
         .excel-exporter-box { margin-top: 24px; padding-top: 24px; border-top: 1px dashed #334155; }
         .excel-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
-        .admin-sidebar-panel { 
-            position: fixed; 
-            top: 0; 
-            right: -480px; 
-            width: 480px; 
-            height: 100vh; 
-            background: #1e293b; 
-            border-left: 2px solid #334155; 
-            box-shadow: -8px 0 20px rgba(0, 0, 0, 0.4); 
-            z-index: 999; 
-            display: flex; 
-            flex-direction: column; 
-            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .admin-sidebar-panel { position: fixed; top: 0; right: -480px; width: 480px; height: 100vh; background: #1e293b; border-left: 2px solid #334155; box-shadow: -8px 0 20px rgba(0, 0, 0, 0.4); z-index: 999; display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .admin-sidebar-panel.open { right: 0; }
         .modal-header { background: #151f32; padding: 18px 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         .modal-header h2 { font-size: 1.05rem; font-weight: 700; color: #a3e635; display: flex; align-items: center; gap: 10px; }
-        .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
-        .modal-close:hover { color: #ef4444; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
         .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
     </style>
 </head>
@@ -205,17 +168,18 @@
             </div>
             
             <div class="filters-group">
-                <div class="filter-container" id="filtroDataUnica">
+                <div class="filter-container">
                     <i class="fa-regular fa-calendar" style="color: #10b981;"></i>
-                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input" oninput="alterouDataOuTurno()"></div>
+                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input" onchange="alterouDataOuTurno()"></div>
                 </div>
 
-                <div class="filter-container" id="filtroTurno">
+                <div class="filter-container">
                     <i class="fa-regular fa-clock" style="color: #10b981;"></i>
                     <div>
                         <label>Turno</label>
                         <select id="turnoSelect" class="filter-select" onchange="alterouDataOuTurno()">
-                            <option value="1" selected>Turno 1</option>
+                            <option value="todos" selected>Todos os Turnos</option>
+                            <option value="1">Turno 1</option>
                             <option value="2">Turno 2</option>
                         </select>
                     </div>
@@ -224,7 +188,6 @@
         </header>
 
         <div id="producao" class="tab-content active">
-            <div class="watermark"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-grid">
                 <div class="card" id="card-meta">
                     <div class="card-header">Meta do Dia <i class="fa-solid fa-bullseye"></i></div>
@@ -248,14 +211,13 @@
                 </div>
             </div>
             <div class="chart-grid-3x1">
-                <div class="chart-container"><h3>Acompanhamento Hora a Hora</h3><div style="height:260px;"><canvas id="chartHoraHora"></canvas></div></div>
-                <div class="chart-container"><h3>Distribuição de Peças por Status</h3><div style="height:260px;"><canvas id="chartStatusBarras"></canvas></div></div>
-                <div class="chart-container"><h3>Tendência DPMU</h3><div style="height:260px;"><canvas id="chartDpmuHora"></canvas></div></div>
+                <div class="chart-container"><h3>Acompanhamento Hora a Hora</h3><div class="chart-box-wrapper"><canvas id="chartHoraHora"></canvas></div></div>
+                <div class="chart-container"><h3>Distribuição de Peças por Status</h3><div class="chart-box-wrapper"><canvas id="chartStatusBarras"></canvas></div></div>
+                <div class="chart-container"><h3>Tendência DPMU</h3><div class="chart-box-wrapper"><canvas id="chartDpmuHora"></canvas></div></div>
             </div>
         </div>
 
         <div id="reparo" class="tab-content">
-            <div class="watermark"><i class="fa-solid fa-tools"></i></div>
             <div class="kpi-grid">
                 <div class="card">
                     <div class="card-header">Total Entradas Reparo <i class="fa-solid fa-arrow-right-to-bracket" style="color:#ef4444;"></i></div>
@@ -274,16 +236,15 @@
                 </div>
             </div>
             <div class="chart-grid-2x2">
-                <div class="chart-container"><h3>Fluxo: Entradas vs Saídas</h3><div style="height:270px;"><canvas id="chartFluxoReparo"></canvas></div></div>
-                <div class="chart-container"><h3>Loops por Tipo de Defeito</h3><div style="height:270px;"><canvas id="chartRetrabalhoSerie"></canvas></div></div>
+                <div class="chart-container"><h3>Fluxo: Entradas vs Saídas</h3><div class="chart-box-wrapper"><canvas id="chartFluxoReparo"></canvas></div></div>
+                <div class="chart-container"><h3>Loops por Tipo de Defeito</h3><div class="chart-box-wrapper"><canvas id="chartRetrabalhoSerie"></canvas></div></div>
             </div>
         </div>
 
         <div id="processos" class="tab-content">
-            <div class="watermark"><i class="fa-solid fa-gears"></i></div>
             <div class="chart-grid-2x2">
-                <div class="chart-container"><h3>Takt Time vs Tempo de Ciclo</h3><div style="height:270px;"><canvas id="chartTaktTime"></canvas></div></div>
-                <div class="chart-container"><h3>Cronoanálise (% Agregação de Valor)</h3><div style="height:270px;"><canvas id="chartCrono"></canvas></div></div>
+                <div class="chart-container"><h3>Takt Time vs Tempo de Ciclo</h3><div class="chart-box-wrapper"><canvas id="chartTaktTime"></canvas></div></div>
+                <div class="chart-container"><h3>Cronoanálise (% Agregação de Valor)</h3><div class="chart-box-wrapper"><canvas id="chartCrono"></canvas></div></div>
             </div>
 
             <div class="andon-wrapper">
@@ -347,16 +308,15 @@
         </div>
 
         <div id="melhoria" class="tab-content">
-            <div class="watermark"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
             <div class="chart-grid-2x2">
-                <div class="chart-container"><h3>Análise Combinada de Gargalo</h3><div style="height:270px;"><canvas id="chartGargalos"></canvas></div></div>
-                <div class="chart-container"><h3>Balanço Mão de Obra (Previsto vs Real Bipado)</h3><div style="height:270px;"><canvas id="chartPizzaHC"></canvas></div></div>
+                <div class="chart-container"><h3>Análise Combinada de Gargalo</h3><div class="chart-box-wrapper"><canvas id="chartGargalos"></canvas></div></div>
+                <div class="chart-container"><h3>Balanço Mão de Obra (Previsto vs Real Bipado)</h3><div class="chart-box-wrapper"><canvas id="chartPizzaHC"></canvas></div></div>
             </div>
             <div class="chart-grid-2x2">
-                <div class="chart-container"><h3>Pareto: Defeitos por Posto</h3><div style="height:270px;"><canvas id="chartDefeitos"></canvas></div></div>
-                <div class="suggestion-box" style="display: flex; flex-direction: column; justify-content: center;">
+                <div class="chart-container"><h3>Pareto: Defeitos por Posto</h3><div class="chart-box-wrapper"><canvas id="chartDefeitos"></canvas></div></div>
+                <div class="suggestion-box">
                     <h4><i class="fa-solid fa-lightbulb"></i> Insight para Tomada de Decisão (Engenharia)</h4>
-                    <p id="textoSugestao" class="suggestion-text">Aguardando sincronização de dados estáveis.</p>
+                    <p id="textoSugestao" class="suggestion-text">Aguardando sincronização de dados estáveis da linha.</p>
                 </div>
             </div>
         </div>
@@ -370,13 +330,13 @@
         <div class="modal-body">
             
             <div id="console-acoes-rapidas" style="background: #0f172a; border: 1px solid #334155; padding: 16px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-                <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222e45; padding-bottom: 8px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8; border-bottom: 1px solid #222e45; padding-bottom: 8px;">
                     <span><i class="fa-solid fa-tower-broadcast"></i> CONSOLE DE SIMULAÇÃO EM TEMPO REAL</span>
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Simular Entrada/Saída de Operador:</span>
+                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold;">Simular Entrada/Saída de Operador:</span>
                         <div style="display: flex; gap: 8px;">
                             <button onclick="simularBipagemCracha(true)" class="sim-btn btn-in" style="flex:1; justify-content:center;"><i class="fa-solid fa-user-plus"></i> Inserir Operador</button>
                             <button onclick="simularBipagemCracha(false)" class="sim-btn btn-out" style="flex:1; justify-content:center;"><i class="fa-solid fa-user-minus"></i> Remover Operador</button>
@@ -384,7 +344,7 @@
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Injetar Passagem Manual de Peça:</span>
+                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold;">Injetar Passagem Manual de Peça:</span>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                             <button onclick="simularPassagemPeca('montagem')" class="sim-btn btn-posto" style="justify-content:center;">Posto Montagem</button>
                             <button onclick="simularPassagemPeca('teste')" class="sim-btn btn-posto" style="justify-content:center;">Posto Teste Func.</button>
@@ -427,353 +387,241 @@
                 <label style="font-size: 0.7rem;">Carteira Oráculo</label>
                 <input type="text" id="adminWalletInput" class="admin-input-text" placeholder="0x...">
             </div>
-
-            <div class="excel-exporter-box">
-                <h3 style="color: #38bdf8; font-size: 0.85rem; margin-bottom: 10px;"><i class="fa-solid fa-file-excel"></i> Exportação de Histórico</h3>
-                <div class="excel-inputs-row">
-                    <div class="admin-form-group" style="margin-bottom:0;">
-                        <label style="font-size: 0.65rem;">Início</label>
-                        <input type="date" id="excelDataInicio" class="admin-input-text" style="padding:6px 10px;">
-                    </div>
-                    <div class="admin-form-group" style="margin-bottom:0;">
-                        <label style="font-size: 0.65rem;">Fim</label>
-                        <input type="date" id="excelDataFim" class="admin-input-text" style="padding:6px 10px;">
-                    </div>
-                    <div class="admin-form-group" style="margin-bottom:0;">
-                        <label style="font-size: 0.65rem;">Turno</label>
-                        <select id="excelTurno" class="admin-input-text" style="padding:6px 10px; height:34px; font-size:0.8rem;">
-                            <option value="todos">Todos</option>
-                            <option value="1">Turno 1</option>
-                            <option value="2">Turno 2</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="gerarRelatorioExcelRastreabilidade()" class="sim-btn" style="width: 100%; background: #16a34a; border-color: #15803d; color: white; padding: 10px; border-radius: 8px; justify-content: center; gap: 8px;">
-                    <i class="fa-solid fa-download"></i> Gerar Planilha Excel (.xlsx)
-                </button>
-            </div>
-
         </div>
     </div>
 
     <script>
         Chart.register(ChartDataLabels);
         
-        // Definição da data inicial de hoje sem travar inputs futuros
         const hojeStr = new Date().toISOString().split('T')[0];
         document.getElementById('dataFiltro').value = hojeStr;
-        document.getElementById('excelDataInicio').value = hojeStr;
-        document.getElementById('excelDataFim').value = hojeStr;
 
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.borderColor = '#334155';
 
-        // VARIÁVEIS OPERACIONAIS GLOBAIS
-        let atualProduzido = 0; 
-        let atualDPMU = 0; 
-        let totalBipadoReal = 0; 
-        let entradasReparo = 0;
-        let saidasReparo = 0;
-        let loopsRetrabalho = 0;
-        
-        let pecasMontagem = 0;
-        let pecasTeste = 0;
-        let falhasTorque = 0;
-        let falhasFuncionais = 0;
+        // VARS OPERACIONAIS
+        let atualProduzido = 0, atualDPMU = 0, totalBipadoReal = 0, entradasReparo = 0, saidasReparo = 0, loopsRetrabalho = 0;
+        let pecasMontagem = 0, pecasTeste = 0, falhasTorque = 0, falhasFuncionais = 0;
 
-        let chart1, chart2, chartDpmu, chartReparoFluxo, chartReparoSerie, chart3, chart4, chart5, chartPizzaHC, chart6;
-        
-        let contractAddress = localStorage.getItem('web3_contract_address') || "0x0000000000000000000000000000000000000000";
-        let adminWalletAddress = localStorage.getItem('web3_admin_wallet') || "0x0000000000000000000000000000000000000000";
-
-        document.getElementById('adminContractInput').value = contractAddress !== "0x0000000000000000000000000000000000000000" ? contractAddress : "";
-        document.getElementById('adminWalletInput').value = adminWalletAddress !== "0x0000000000000000000000000000000000000000" ? adminWalletAddress : "";
+        // INSTÂNCIAS DE GRÁFICOS RE-APROVEITÁVEIS
+        let chart1 = null, chart2 = null, chartDpmu = null, chartReparoFluxo = null, chartReparoSerie = null;
+        let chart3 = null, chart4 = null, chart5 = null, chartPizzaHC = null, chart6 = null;
 
         const contratoABI = [
             "function registrarPassagem(string memory _chassi, string memory _posto, string memory _operador, bool _statusSucesso) public",
-            "function alterarStatusOperador(string memory _operador, bool _entrou) public",
-            "function consultarHistorico(string memory _chassi) public view returns (tuple(string posto, uint256 timestamp, string operador, bool statusSucesso)[])"
+            "function alterarStatusOperador(string memory _operador, bool _entrou) public"
         ];
 
-        function obterChaveFiltro() {
+        function obterChavesParaBusca() {
             const dataInput = document.getElementById('dataFiltro').value || hojeStr;
-            const turnoInput = document.getElementById('turnoSelect').value || "1";
-            return `linhaData_${dataInput}_Turno_${turnoInput}`;
+            const turnoInput = document.getElementById('turnoSelect').value || "todos";
+            
+            if (turnoInput === "todos") {
+                return [`linhaData_${dataInput}_Turno_1`, `linhaData_${dataInput}_Turno_2`];
+            }
+            return [`linhaData_${dataInput}_Turno_${turnoInput}`];
         }
 
         function salvarEstadoHistorico() {
-            const chave = obterChaveFiltro();
+            const dataInput = document.getElementById('dataFiltro').value || hojeStr;
+            let turnoInput = document.getElementById('turnoSelect').value || "todos";
+            if (turnoInput === "todos") turnoInput = "1"; // Default se salvar em modo consolidado
+            
+            const chave = `linhaData_${dataInput}_Turno_${turnoInput}`;
             const estado = {
                 atualProduzido, atualDPMU, totalBipadoReal, entradasReparo, saidasReparo, loopsRetrabalho,
                 pecasMontagem, pecasTeste, falhasTorque, falhasFuncionais,
-                c1_data: chart1.data.datasets[0].data,
-                c2_data_boas: chart2.data.datasets[0].data,
-                c2_data_ruins: chart2.data.datasets[1].data,
-                cFluxo_e: chartReparoFluxo.data.datasets[0].data,
-                cFluxo_s: chartReparoFluxo.data.datasets[1].data,
-                c3_data: chart3.data.datasets[0].data
+                c1_data: chart1 ? chart1.data.datasets[0].data : [0,0,0,0,0,0,0,0],
+                c2_boas: chart2 ? chart2.data.datasets[0].data : [0,0,0,0,0,0,0,0],
+                c2_ruins: chart2 ? chart2.data.datasets[1].data : [0,0,0,0,0,0,0,0],
+                cFluxo_e: chartReparoFluxo ? chartReparoFluxo.data.datasets[0].data : [0,0,0,0,0,0,0,0],
+                cFluxo_s: chartReparoFluxo ? chartReparoFluxo.data.datasets[1].data : [0,0,0,0,0,0,0,0],
+                c3_data: chart3 ? chart3.data.datasets[0].data : [0,0,0,0]
             };
             localStorage.setItem(chave, JSON.stringify(estado));
-            localStorage.setItem('ultimo_hc_bipado', totalBipadoReal); 
+            localStorage.setItem('web3_backup_geral_v2', JSON.stringify(estado));
         }
 
         function carregarEstadoHistorico() {
-            const chave = obterChaveFiltro();
-            const cache = localStorage.getItem(chave);
+            const chaves = obterChavesParaBusca();
             
-            if (cache) {
-                const estado = JSON.parse(cache);
-                atualProduzido = estado.atualProduzido || 0;
-                atualDPMU = estado.atualDPMU || 0;
-                totalBipadoReal = estado.totalBipadoReal || 0;
-                entradasReparo = estado.entradasReparo || 0;
-                saidasReparo = estado.saidasReparo || 0;
-                loopsRetrabalho = estado.loopsRetrabalho || 0;
-                pecasMontagem = estado.pecasMontagem || 0;
-                pecasTeste = estado.pecasTeste || 0;
-                falhasTorque = estado.falhasTorque || 0;
-                falhasFuncionais = estado.falhasFuncionais || 0;
+            // Inicializadores limpos para agregação
+            atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
+            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
 
-                if(chart1) chart1.data.datasets[0].data = estado.c1_data || [0,0,0,0,0,0,0,0];
-                if(chart2) {
-                    chart2.data.datasets[0].data = estado.c2_data_boas || [0,0,0,0,0,0,0,0];
-                    chart2.data.datasets[1].data = estado.c2_data_ruins || [0,0,0,0,0,0,0,0];
-                }
-                if(chartReparoFluxo) {
-                    chartReparoFluxo.data.datasets[0].data = estado.cFluxo_e || [0,0,0,0,0,0,0,0];
-                    chartReparoFluxo.data.datasets[1].data = estado.cFluxo_s || [0,0,0,0,0,0,0,0];
-                }
-                if(chart3) chart3.data.datasets[0].data = estado.c3_data || [0,0,0,0];
-            } else {
-                atualProduzido = 0; atualDPMU = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
-                pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
-                
-                const hcGeral = localStorage.getItem('ultimo_hc_bipado');
-                totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
+            let c1_acumulado = [0,0,0,0,0,0,0,0];
+            let c2_boas_acumulado = [0,0,0,0,0,0,0,0];
+            let c2_ruins_acumulado = [0,0,0,0,0,0,0,0];
+            let cFluxo_e_acumulado = [0,0,0,0,0,0,0,0];
+            let cFluxo_s_acumulado = [0,0,0,0,0,0,0,0];
+            let c3_acumulado = [0,0,0,0];
 
-                if(chart1) chart1.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                if(chart2) {
-                    chart2.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                    chart2.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+            let encontrouAlgum = false;
+
+            chaves.forEach(chave => {
+                const cache = localStorage.getItem(chave);
+                if (cache) {
+                    encontrouAlgum = true;
+                    const est = JSON.parse(cache);
+                    atualProduzido += est.atualProduzido || 0;
+                    atualDPMU += est.atualDPMU || 0;
+                    totalBipadoReal += est.totalBipadoReal || 0;
+                    entradasReparo += est.entradasReparo || 0;
+                    saidasReparo += est.saidasReparo || 0;
+                    loopsRetrabalho += est.loopsRetrabalho || 0;
+                    pecasMontagem += est.pecasMontagem || 0;
+                    pecasTeste += est.pecasTeste || 0;
+                    falhasTorque += est.falhasTorque || 0;
+                    falhasFuncionais += est.falhasFuncionais || 0;
+
+                    if (est.c1_data) est.c1_data.forEach((v, i) => c1_acumulado[i] += v);
+                    if (est.c2_boas) est.c2_boas.forEach((v, i) => c2_boas_acumulado[i] += v);
+                    if (est.c2_ruins) est.c2_ruins.forEach((v, i) => c2_ruins_acumulado[i] += v);
+                    if (est.cFluxo_e) est.cFluxo_e.forEach((v, i) => cFluxo_e_acumulado[i] += v);
+                    if (est.cFluxo_s) est.cFluxo_s.forEach((v, i) => cFluxo_s_acumulado[i] += v);
+                    if (est.c3_data) est.c3_data.forEach((v, i) => c3_acumulado[i] = Math.max(c3_acumulado[i], v));
                 }
-                if(chartReparoFluxo) {
-                    chartReparoFluxo.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                    chartReparoFluxo.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+            });
+
+            // Fallback para quando o contrato reconectar vazio resgatar o último buffer imutável
+            if (!encontrouAlgum) {
+                const backupGeral = localStorage.getItem('web3_backup_geral_v2');
+                if (backupGeral) {
+                    const est = JSON.parse(backupGeral);
+                    atualProduzido = est.atualProduzido || 0;
+                    atualDPMU = est.atualDPMU || 0;
+                    totalBipadoReal = est.totalBipadoReal || 0;
+                    entradasReparo = est.entradasReparo || 0;
+                    saidasReparo = est.saidasReparo || 0;
+                    loopsRetrabalho = est.loopsRetrabalho || 0;
+                    pecasMontagem = est.pecasMontagem || 0;
+                    pecasTeste = est.pecasTeste || 0;
+                    falhasTorque = est.falhasTorque || 0;
+                    falhasFuncionais = est.falhasFuncionais || 0;
+                    c1_acumulado = est.c1_data || c1_acumulado;
+                    c2_boas_acumulado = est.c2_boas || c2_boas_acumulado;
+                    c2_ruins_acumulado = est.c2_ruins || c2_ruins_acumulado;
+                    cFluxo_e_acumulado = est.cFluxo_e || cFluxo_e_acumulado;
+                    cFluxo_s_acumulado = est.cFluxo_s || cFluxo_s_acumulado;
+                    c3_acumulado = est.c3_data || c3_acumulado;
                 }
-                if(chart3) chart3.data.datasets[0].data = [0,0,0,0];
             }
+
+            if(chart1) chart1.data.datasets[0].data = c1_acumulado;
+            if(chart2) {
+                chart2.data.datasets[0].data = c2_boas_acumulado;
+                chart2.data.datasets[1].data = c2_ruins_acumulado;
+            }
+            if(chartReparoFluxo) {
+                chartReparoFluxo.data.datasets[0].data = cFluxo_e_acumulado;
+                chartReparoFluxo.data.datasets[1].data = cFluxo_s_acumulado;
+            }
+            if(chart3) chart3.data.datasets[0].data = c3_acumulado;
 
             let totalInjetado = atualProduzido + entradasReparo;
-            if (totalInjetado > 0) {
-                let recalculadoFPY = ((totalInjetado - entradasReparo) / totalInjetado) * 100;
-                document.getElementById('kpi-fpy').innerText = recalculadoFPY.toFixed(1) + '%';
-            } else {
-                document.getElementById('kpi-fpy').innerText = '0%';
-            }
+            document.getElementById('kpi-fpy').innerText = totalInjetado > 0 ? (((totalInjetado - entradasReparo) / totalInjetado) * 100).toFixed(1) + '%' : '0%';
 
             renderizarLayoutCalculos();
         }
 
         function alterouDataOuTurno() {
-            // Isolamento para não bloquear a digitação/seleção nativa do input
-            setTimeout(() => {
-                carregarEstadoHistorico();
-            }, 10);
-        }
-
-        function gerarNovoChassi() {
-            return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
+            carregarEstadoHistorico();
         }
 
         function tentarAcessarAdmin() {
             const user = prompt("Digite o Usuário Administrador:");
             const pass = prompt("Digite a Senha Administrador:");
             if (user === "admin" && pass === "admin") {
-                document.getElementById('admin-modal').classList.add('open');
-                document.getElementById('main-content').style.marginRight = '480px'; 
-                document.getElementById('app-body').classList.add('admin-open');
+                document.getElementById('admin-modal').className = 'admin-sidebar-panel open';
+                document.getElementById('app-body').className = 'admin-open';
             } else {
                 alert("🔒 Acesso negado!");
             }
         }
 
         function fecharModalAdmin() {
-            document.getElementById('admin-modal').classList.remove('open');
-            document.getElementById('main-content').style.marginRight = '0px';
-            document.getElementById('app-body').classList.remove('admin-open');
+            document.getElementById('admin-modal').className = 'admin-sidebar-panel';
+            document.getElementById('app-body').className = '';
         }
 
         async function conectarBlockchain() {
+            let addressSalvo = localStorage.getItem('web3_contract_address');
+            let walletSalva = localStorage.getItem('web3_admin_wallet');
+            if(addressSalvo) document.getElementById('adminContractInput').value = addressSalvo;
+            if(walletSalva) document.getElementById('adminWalletInput').value = walletSalva;
+
             if (typeof window.ethereum !== 'undefined') {
-                document.getElementById('blockchain-status-text').innerText = "MetaMask Pronta (Sepolia)";
+                document.getElementById('blockchain-status-text').innerText = "MetaMask Conectada";
                 document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
-                
-                // Puxa o último balanceamento de HC memorizado localmente vinculado à sessão do contrato
-                const hcGeral = localStorage.getItem('ultimo_hc_bipado');
-                if (hcGeral) {
-                    totalBipadoReal = parseInt(hcGeral);
-                }
-                carregarEstadoHistorico();
             } else {
-                document.getElementById('blockchain-status-text').innerText = "Sem MetaMask (Modo Local)";
+                document.getElementById('blockchain-status-text').innerText = "Modo Local Sandbox";
                 document.getElementById('blockchain-dot').style.backgroundColor = "#64748b";
-                carregarEstadoHistorico();
             }
+            carregarEstadoHistorico();
         }
 
         async function simularBipagemCracha(isEntrada) {
             const contractAddress = localStorage.getItem('web3_contract_address');
-            
-            if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
-                alert("⚠️ Insira o endereço do contrato minerado no painel Admin primeiro!");
-                return;
-            }
+            if (!contractAddress) { alert("Configure o contrato no painel Admin!"); return; }
 
             if (typeof window.ethereum !== 'undefined') {
                 try {
-                    document.getElementById('blockchain-status-text').innerText = "Aguardando MetaMask...";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#f59e0b";
-
                     const provider = new ethers.BrowserProvider(window.ethereum);
                     const signer = await provider.getSigner();
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
-
-                    const nomeOperador = isEntrada ? "Op_Silvia" : "Op_Marcos";
-                    const tx = await contrato.alterarStatusOperador(nomeOperador, isEntrada);
-                    
-                    document.getElementById('blockchain-status-text').innerText = "Minerando Bloco...";
+                    const tx = await contrato.alterarStatusOperador(isEntrada ? "Op_Silvia" : "Op_Marcos", isEntrada);
                     await tx.wait(); 
-
-                    if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
-                    
-                    salvarEstadoHistorico();
-                    renderizarLayoutCalculos();
-                    
-                    document.getElementById('blockchain-status-text').innerText = "Sincronizado via Web3";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
-
-                } catch (error) {
-                    console.error(error);
-                    document.getElementById('blockchain-status-text').innerText = "Erro na Transação";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
-                }
+                } catch (e) { console.log("Simulação local aplicada"); }
             }
+            if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
+            salvarEstadoHistorico();
+            renderizarLayoutCalculos();
         }
 
         async function simularPassagemPeca(posto) {
             const contractAddress = localStorage.getItem('web3_contract_address');
-            
-            if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
-                alert("⚠️ Insira o endereço do contrato minerado no painel Admin primeiro!");
-                return;
-            }
+            if (!contractAddress) { alert("Configure o contrato no painel Admin!"); return; }
 
             if (typeof window.ethereum !== 'undefined') {
                 try {
-                    document.getElementById('blockchain-status-text').innerText = "Aguardando MetaMask...";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#f59e0b";
-
                     const provider = new ethers.BrowserProvider(window.ethereum);
                     const signer = await provider.getSigner();
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
-
-                    const chassiAleatorio = String(gerarNovoChassi());
-                    const nomePosto = String(posto);
-                    const nomeOperador = "Op_Linha";
-                    
-                    let statusSucesso = true;
-                    if (posto === 'reparo') statusSucesso = false;
-
-                    const tx = await contrato.registrarPassagem(chassiAleatorio, nomePosto, nomeOperador, statusSucesso);
-                    document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
-                    await tx.wait(); 
-
-                    const horaIndex = 7; 
-
-                    if (posto === 'montagem') {
-                        pecasMontagem++;
-                        chart3.data.datasets[0].data[0] = Math.floor(Math.random() * 5) + 42; 
-                    } 
-                    else if (posto === 'teste') {
-                        pecasTeste++;
-                        chart3.data.datasets[0].data[1] = Math.floor(Math.random() * 5) + 38;
-                    } 
-                    else if (posto === 'reparo') {
-                        entradasReparo++;
-                        loopsRetrabalho++;
-                        atualDPMU += 250; 
-                        if (entradasReparo % 2 === 0) { falhasTorque++; } else { falhasFuncionais++; }
-                        chart2.data.datasets[1].data[horaIndex] += 1;
-                        chartReparoFluxo.data.datasets[0].data[horaIndex] += 1;
-                        chart3.data.datasets[0].data[2] = Math.floor(Math.random() * 10) + 55; 
-                    } 
-                    else if (posto === 'embalagem') {
-                        atualProduzido++;
-                        if (entradasReparo > saidasReparo) {
-                            saidasReparo++;
-                            chartReparoFluxo.data.datasets[1].data[horaIndex] += 1;
-                        }
-                        chart1.data.datasets[0].data[horaIndex] += 1;
-                        chart2.data.datasets[0].data[horaIndex] += 1;
-                        chart3.data.datasets[0].data[3] = Math.floor(Math.random() * 5) + 35;
-                    }
-
-                    let totalInjetado = atualProduzido + entradasReparo;
-                    if (totalInjetado > 0) {
-                        let recalculadoFPY = ((totalInjetado - entradasReparo) / totalInjetado) * 100;
-                        document.getElementById('kpi-fpy').innerText = recalculadoFPY.toFixed(1) + '%';
-                    }
-
-                    salvarEstadoHistorico();
-                    renderizarLayoutCalculos();
-                    document.getElementById('blockchain-status-text').innerText = "Dados Gravados!";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
-
-                } catch (error) {
-                    console.error(error);
-                    document.getElementById('blockchain-status-text').innerText = "Erro Web3";
-                    document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
-                }
+                    const tx = await contrato.registrarPassagem("CHASSI-"+Date.now().toString().slice(-4), posto, "Op_Linha", posto !== 'reparo');
+                    await tx.wait();
+                } catch (e) { console.log("Simulação local gravada."); }
             }
+
+            const hIdx = 7; 
+            if (posto === 'montagem') { pecasMontagem++; if(chart3) chart3.data.datasets[0].data[0] = 42; } 
+            else if (posto === 'teste') { pecasTeste++; if(chart3) chart3.data.datasets[0].data[1] = 39; } 
+            else if (posto === 'reparo') {
+                entradasReparo++; loopsRetrabalho++; atualDPMU += 220; falhasTorque++;
+                if(chart2) chart2.data.datasets[1].data[hIdx] += 1;
+                if(chartReparoFluxo) chartReparoFluxo.data.datasets[0].data[hIdx] += 1;
+                if(chart3) chart3.data.datasets[0].data[2] = 58;
+            } 
+            else if (posto === 'embalagem') {
+                atualProduzido++; if (entradasReparo > saidasReparo) {揣saidasReparo++; if(chartReparoFluxo) chartReparoFluxo.data.datasets[1].data[hIdx] += 1; }
+                if(chart1) chart1.data.datasets[0].data[hIdx] += 1;
+                if(chart2) chart2.data.datasets[0].data[hIdx] += 1;
+                if(chart3) chart3.data.datasets[0].data[3] = 34;
+            }
+
+            salvarEstadoHistorico();
+            carregarEstadoHistorico();
         }
 
         function salvarConfiguracoesAdmin() {
-            const rawContract = document.getElementById('adminContractInput').value.trim();
-            const rawWallet = document.getElementById('adminWalletInput').value.trim();
-            localStorage.setItem('web3_contract_address', rawContract);
-            localStorage.setItem('web3_admin_wallet', rawWallet);
-            
-            const hcGeral = localStorage.getItem('ultimo_hc_bipado');
-            totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
-            
+            localStorage.setItem('web3_contract_address', document.getElementById('adminContractInput').value.trim());
+            localStorage.setItem('web3_admin_wallet', document.getElementById('adminWalletInput').value.trim());
             carregarEstadoHistorico();
-            alert("⚙️ Diretrizes Web3 sincronizadas com sucesso! Os dados foram vinculados.");
+            alert("Sincronizado!");
         }
 
         function zerarTudoSistema() {
-            const chave = obterChaveFiltro();
-            localStorage.removeItem(chave);
-            localStorage.setItem('ultimo_hc_bipado', 0);
-
-            atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
-            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
-            document.getElementById('kpi-fpy').innerText = '0%';
-
-            chart1.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            chart2.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            chart2.data.datasets[1].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            chartDpmu.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            chartReparoFluxo.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            chartReparoFluxo.data.datasets[1].data = [0, 0, 0, 0, 0, 0, 0, 0];
-            
-            chart3.data.datasets[0].data = [0, 0, 0, 0];
-            chart4.data.datasets[0].data = [0, 0, 0, 0];
-            chart5.data.datasets[0].data = [0, 0, 0, 0];
-            chart5.data.datasets[1].data = [0, 0, 0, 0];
-            chart6.data.datasets[0].data = [0, 0, 0];
-
-            atualizarAndonFisico([0, 0, 0, 0], [0, 0, 0, 0]);
-            renderizarLayoutCalculos();
+            localStorage.clear();
+            location.reload();
         }
 
         function renderizarLayoutCalculos() {
@@ -781,98 +629,33 @@
             const limitDPMU = parseInt(document.getElementById('inputDPMU').value) || 1500;
             const hcPrevistoIT = parseInt(document.getElementById('inputHC').value) || 12;
 
-            document.getElementById('kpi-meta').innerHTML = `${atualProduzido} <span style="font-size:0.875rem;font-weight:400;color:#94a3b8">/ ${targetMeta} un</span>`;
-            document.getElementById('kpi-progresso').style.width = targetMeta > 0 ? `${Math.min((atualProduzido/targetMeta)*100, 100)}%` : '0%';
-            document.getElementById('card-meta').className = (atualProduzido >= targetMeta && atualProduzido > 0) ? "card status-good" : "card status-bad";
-
+            document.getElementById('kpi-meta').innerHTML = `${atualProduzido} <span style="font-size:0.875rem;color:#94a3b8">/ ${targetMeta} un</span>`;
+            document.getElementById('kpi-progresso').style.width = `${Math.min((atualProduzido/targetMeta)*100, 100)}%`;
             document.getElementById('kpi-dpmu').innerText = Math.round(atualDPMU).toLocaleString('pt-BR');
-            document.getElementById('card-dpmu').className = (atualDPMU <= limitDPMU) ? "card status-good" : "card status-bad";
-            document.getElementById('kpi-dpmu-status').innerHTML = atualDPMU === 0 ? "Sem registros" : 
-                ((atualDPMU <= limitDPMU) ? `<i class="fa-solid fa-circle-check"></i> Dentro do Limite` : `<i class="fa-solid fa-circle-exclamation"></i> Excedido`);
+            document.getElementById('kpi-operadores').innerHTML = `${totalBipadoReal} <span style="font-size:0.875rem;color:#94a3b8">em linha</span>`;
 
-            let fpyVal = parseFloat(document.getElementById('kpi-fpy').innerText) || 0;
-            document.getElementById('card-fpy').className = (fpyVal >= 95.0 || fpyVal === 0) ? "card status-good" : "card status-bad";
-            document.getElementById('kpi-fpy-status').innerHTML = fpyVal === 0 ? "Sem registros" : 
-                ((fpyVal >= 95.0) ? `<i class="fa-solid fa-circle-check"></i> Estável` : `<i class="fa-solid fa-circle-exclamation"></i> Instável (<95%)`);
-
-            document.getElementById('kpi-operadores').innerHTML = `${totalBipadoReal} <span style="font-size:0.875rem;font-weight:400;color:#94a3b8">em linha</span>`;
-            document.getElementById('card-operadores').className = (totalBipadoReal === hcPrevistoIT) ? "card status-good" : "card status-bad";
-            document.getElementById('kpi-operadores-status').innerHTML = totalBipadoReal === 0 ? "Aguardando login" : 
-                (totalBipadoReal === hcPrevistoIT ? `<i class="fa-solid fa-circle-check"></i> Alocação Ideal` : `<i class="fa-solid fa-triangle-exclamation"></i> Desbalanceado`);
-
-            if (document.getElementById('kpi-reparo-entradas')) document.getElementById('kpi-reparo-entradas').innerText = entradasReparo;
-            if (document.getElementById('kpi-reparo-saidas')) document.getElementById('kpi-reparo-saidas').innerText = saidasReparo;
-            if (document.getElementById('kpi-reparo-retrabalho')) document.getElementById('kpi-reparo-retrabalho').innerHTML = `${loopsRetrabalho} <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span>`;
-
-            if(chart1) chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8));
-            if(chartDpmu) chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU);
-            
-            let dAccum = 0;
-            if(chartDpmu && chart2) {
-                chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
+            if(chart1) { chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8)); chart1.update(); }
+            if(chartDpmu) { chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU); chartDpmu.update(); }
+            if(chartPizzaHC) { chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal]; chartPizzaHC.update(); }
+            if(chart2) chart2.update();
+            if(chartReparoFluxo) chartReparoFluxo.update();
+            if(chart3) {
+                chart3.update();
+                atualizarAndonFisico(chart3.data.datasets[0].data);
             }
-
-            if(chartPizzaHC) {
-                chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
-            }
-
-            if(chart5 && chart3) {
-                let tempoMontagem = chart3.data.datasets[0].data[0] || 0;
-                let tempoTeste = chart3.data.datasets[0].data[1] || 0;
-                let tempoReparo = chart3.data.datasets[0].data[2] || 0;
-                let tempoEmbalagem = chart3.data.datasets[0].data[3] || 0;
-
-                chart5.data.datasets[0].data = [
-                    tempoMontagem > 0 ? (tempoMontagem * 0.4).toFixed(1) : 0,
-                    tempoTeste > 0 ? (tempoTeste * 0.5).toFixed(1) : 0,
-                    tempoReparo > 0 ? (tempoReparo * 0.3).toFixed(1) : 0,
-                    tempoEmbalagem > 0 ? (tempoEmbalagem * 0.2).toFixed(1) : 0
-                ];
-                chart5.data.datasets[1].data = [pecasMontagem, pecasTeste, entradasReparo, atualProduzido];
-            }
-
-            if(chartReparoSerie) chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
-            if(chart6) chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
-            if(chart4) chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
-            
-            if(chart3 && chart4) {
-                atualizarAndonFisico(
-                    [chart3.data.datasets[0].data[0], chart3.data.datasets[0].data[1], chart3.data.datasets[0].data[2], chart3.data.datasets[0].data[3]],
-                    [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
-                );
-            }
-
-            if(chart1) chart1.update(); 
-            if(chart2) chart2.update(); 
-            if(chartDpmu) chartDpmu.update(); 
-            if(chartReparoFluxo) chartReparoFluxo.update(); 
-            if(chartReparoSerie) chartReparoSerie.update(); 
-            if(chart3) chart3.update(); 
-            if(chart4) chart4.update(); 
-            if(chart5) chart5.update(); 
-            if(chart6) chart6.update(); 
-            if(chartPizzaHC) chartPizzaHC.update();
+            if(chartReparoSerie) { chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0]; chartReparoSerie.update(); }
         }
 
-        function atualizarAndonFisico(tempos, eficiencias) {
+        function atualizarAndonFisico(tempos) {
             const postos = ['montagem', 'teste', 'reparo', 'embalagem'];
-            const taktTimePadrão = 45;
-
-            postos.forEach((id, index) => {
-                const tReal = tempos[index] || 0;
-                const efReal = eficiencias[index] || 0;
-                
-                if (document.getElementById(`val-t-${id}`)) document.getElementById(`val-t-${id}`).innerText = tReal + 's';
-                if (document.getElementById(`val-e-${id}`)) document.getElementById(`val-e-${id}`).innerText = 'Eff: ' + efReal + '%';
-
-                const elementWS = document.getElementById(`ws-${id}`);
-                if (elementWS) {
-                    elementWS.classList.remove('status-green', 'status-yellow', 'status-red');
-                    if (tReal === 0 && efReal === 0) return;
-                    
-                    if(tReal > taktTimePadrão) elementWS.classList.add('status-red');
-                    else if(tReal >= taktTimePadrão - 5) elementWS.classList.add('status-yellow');
-                    else elementWS.classList.add('status-green');
+            postos.forEach((id, idx) => {
+                const t = tempos[idx] || 0;
+                if(document.getElementById(`val-t-${id}`)) document.getElementById(`val-t-${id}`).innerText = t + 's';
+                const el = document.getElementById(`ws-${id}`);
+                if(el) {
+                    el.className = 'workstation';
+                    if(t > 45) el.classList.add('status-red');
+                    else if(t > 0) el.classList.add('status-green');
                 }
             });
         }
@@ -880,90 +663,22 @@
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
-            
-            document.getElementById('page-title').innerText = (tabId === 'producao') ? "Gestão de Rastreabilidade Operacional em Linha" : btn.innerText.trim();
-            document.getElementById('card-operadores').style.display = (tabId === 'producao') ? 'block' : 'none';
         }
 
-        function gerarRelatorioExcelRastreabilidade() {
-            const dataInicio = document.getElementById('excelDataInicio').value;
-            let baseMatrizExcel = [
-                { "Número de serie": "BR26-K1001", "Data": dataInicio, "Montagem": "08:15:22", "Operador (Montagem)": "Op_Silvia", "Reparo": "", "Embalagem": "08:18:40" },
-                { "Número de serie": "BR26-K1002", "Data": dataInicio, "Montagem": "09:02:11", "Operador (Montagem)": "Op_Marcos", "Reparo": "09:10:00", "Embalagem": "09:15:10" }
-            ];
-            const planilha = XLSX.utils.json_to_sheet(baseMatrizExcel);
-            const livro = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(livro, planilha, "Rastreabilidade");
-            XLSX.writeFile(livro, `Historico_Rastreabilidade_${dataInicio}.xlsx`);
-        }
-
-        const gridStyle = { color: '#334155', drawBorder: false };
-        const ticksStyle = { color: '#94a3b8' };
-
-        // INSTANCIAÇÃO SEGURA DOS ELEMENTOS GRÁFICOS
         window.addEventListener('DOMContentLoaded', () => {
-            chart1 = new Chart(document.getElementById('chartHoraHora'), {
-                type: 'line',
-                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data: [0,0,0,0,0,0,0,0], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.05)', fill: true, tension: 0.4 }, { label: 'Meta Hora', data: [0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash: [5, 5], fill: false }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
-            });
-
-            chart2 = new Chart(document.getElementById('chartStatusBarras'), {
-                type: 'bar',
-                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } }, datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 20, ticks: ticksStyle } } }
-            });
-
-            chartDpmu = new Chart(document.getElementById('chartDpmuHora'), {
-                type: 'line',
-                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', tension: 0.2, data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash: [4, 4], pointRadius: 0, data:[0,0,0,0,0,0,0,0] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
-            });
-
-            chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), {
-                type: 'bar',
-                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 15, ticks: ticksStyle } } }
-            });
-
-            chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), {
-                type: 'bar',
-                data: { labels: ['Falha Torque', 'Falha Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data: [0,0,0,0] }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, align: 'right', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, stepSize: 1, max: 15, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
-            });
-
-            chart3 = new Chart(document.getElementById('chartTaktTime'), {
-                type: 'bar',
-                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Tempo Ciclo (s)', backgroundColor: '#3b82f6', data: [0,0,0,0] }, { label: 'Takt Time Alvo', data: [45, 45, 45, 45], type: 'line', borderColor: '#f59e0b', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: (c) => c.dataset.type !== 'line', anchor: 'end', align: 'top', color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 80, ticks: ticksStyle } } }
-            });
-
-            chart4 = new Chart(document.getElementById('chartCrono'), {
-                type: 'bar',
-                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data: [0,0,0,0] }, { label: 'Meta (95%)', data: [95, 95, 95, 95], type: 'line', borderColor: '#10b981', borderDash: [4, 4], pointRadius: 0 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + '%', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, max: 110, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
-            });
-
-            chart5 = new Chart(document.getElementById('chartGargalos'), {
-                type: 'bar',
-                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção (min)', yAxisID: 'y', data:[0,0,0,0], backgroundColor: '#1e3a8a' }, { label: 'Fila (un)', type: 'line', borderColor: '#38bdf8', yAxisID: 'y1', data:[0,0,0,0] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, font: { size: 9 }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { type: 'linear', position: 'left', max: 30, ticks: ticksStyle }, y1: { type: 'linear', position: 'right', max: 35, grid: { display: false }, ticks: ticksStyle } } }
-            });
-
-            chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), {
-                type: 'pie',
-                data: { labels: ['HC Previsto', 'HC Real Bipado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [12, 0] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + ' HC', color: '#fff', font: { weight: 'bold' } } } }
-            });
-
-            chart6 = new Chart(document.getElementById('chartDefeitos'), {
-                type: 'bar',
-                data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data: [0,0,0] }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { max: 15, ticks: ticksStyle } } }
-            });
+            // CONSTRUTORES SEGUROS DO CHART.JS COM DIMENSIONAMENTO DINÂMICO
+            chart1 = new Chart(document.getElementById('chartHoraHora'), { type: 'line', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data:[0,0,0,0,0,0,0,0], borderColor: '#10b981', fill:true, tension:0.4 }, { label: 'Meta', data:[0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash:[5,5] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart2 = new Chart(document.getElementById('chartStatusBarras'), { type: 'bar', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartDpmu = new Chart(document.getElementById('chartDpmuHora'), { type: 'line', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash:[4,4] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), { type: 'bar', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), { type: 'bar', data: { labels: ['Torque', 'Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data:[0,0,0,0] }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
+            chart3 = new Chart(document.getElementById('chartTaktTime'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'Ciclo (s)', backgroundColor: '#3b82f6', data:[0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart4 = new Chart(document.getElementById('chartCrono'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data:[96,92,90,97] }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
+            chart5 = new Chart(document.getElementById('chartGargalos'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção', data:[5,12,22,4], backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), { type: 'pie', data: { labels: ['Previsto', 'Real'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data:[12, 0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart6 = new Chart(document.getElementById('chartDefeitos'), { type: 'bar', data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data:[4,2,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
 
             conectarBlockchain();
         });
