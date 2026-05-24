@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projeto HackWeb - Gestão de Rastreabilidade Operacional em Linha</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        html, body { width: 100%; height: 100%; background-color: #0f172a; color: #f1f5f9; display: flex; overflow: hidden; }
+        
+        aside { width: 280px; background-color: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; flex-shrink: 0; height: 100%; z-index: 10; }
+        .sidebar-header { padding: 20px 15px; border-bottom: 1px solid #334155; }
+        .sidebar-header h1 { color: #a3e635; font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
+        .sidebar-header span { font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 4px; font-weight: 500; }
+        
+        nav { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+        .tab-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; font-size: 0.9rem; font-weight: 600; color: #94a3b8; background: none; cursor: pointer; border-radius: 8px; text-align: left; transition: all 0.2s; }
+        .tab-btn:hover { background-color: #334155; color: #f8fafc; }
+        .tab-btn.active { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .tab-btn.admin-btn { border: 1px dashed rgba(163, 230, 53, 0.3); color: #a3e635; margin-top: 15px; }
+        .tab-btn.admin-btn:hover { background-color: rgba(163, 230, 53, 0.1); }
+        
+        .status-block { padding: 15px; border-top: 1px solid #334155; font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 8px; height: 8px; background-color: #64748b; border-radius: 50%; display: inline-block; transition: all 0.3s ease; }
+
+        main { flex: 1; height: 100%; padding: 32px; overflow-y: auto; position: relative; background-color: #0f172a; transition: margin-right 0.3s ease; z-index: 1; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; position: relative; z-index: 5; border-bottom: 1px solid #334155; padding-bottom: 20px; }
+        header h2 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
+        header p { font-size: 0.875rem; color: #94a3b8; margin-top: 2px; }
+        
+        .watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%) rotate(-5deg); font-size: 35rem; color: rgba(163, 230, 53, 0.01); pointer-events: none; z-index: 1; user-select: none; white-space: nowrap; }
+
+        .filters-group { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-container { display: flex; align-items: center; gap: 12px; background: #1e293b; padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .filter-container label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 2px; letter-spacing: 0.5px; }
+        .filter-select, .filter-input { border: none; background: transparent; font-size: 0.875rem; font-weight: 700; color: #f8fafc; cursor: pointer; outline: none; }
+        .filter-select option { background-color: #1e293b; color: #f8fafc; }
+        .filter-input[type="number"] { width: 65px; border-bottom: 1px dashed #10b981; text-align: center; }
+        .turno-horario { font-size: 0.825rem; color: #64748b; border-left: 1px solid #334155; padding-left: 12px; height: 100%; display: flex; align-items: center; }
+
+        .tab-content { display: none; position: relative; z-index: 5; width: 100%; }
+        .tab-content.active { display: block; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 30px; }
+        .card { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .card.status-good { background-color: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); }
+        .card.status-bad { background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.3); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .card-value { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
+        
+        .status-good .card-value { color: #34d399 !important; }
+        .status-bad .card-value { color: #f87171 !important; }
+
+        .progress-bar { width: 100%; background: #334155; height: 8px; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+        .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
+        
+        .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
+
+        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; }
+        .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; }
+        @media(max-width: 1400px) { .chart-grid-3x1 { grid-template-columns: 1fr; } }
+        @media(max-width: 1024px) { .chart-grid-2x2 { grid-template-columns: 1fr; } }
+        
+        .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; min-height: 340px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
+        .chart-container h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 16px; }
+
+        .andon-wrapper { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
+        .andon-wrapper h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 20px; }
+        
+        .industrial-floor { display: flex; flex-direction: column; gap: 40px; position: relative; padding: 20px 10px; background: #151f32; border-radius: 8px; border: 1px dashed #334155; }
+        .production-line { display: flex; justify-content: space-between; align-items: flex-start; position: relative; height: 180px; padding: 0 40px; }
+        
+        .conveyor-belt { position: absolute; top: 120px; left: 0; width: 100%; height: 16px; background: repeating-linear-gradient(90deg, #334155, #334155 10px, #1e293b 10px, #1e293b 20px); border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); z-index: 1; animation: moveBelt 1s linear infinite; }
+        @keyframes moveBelt { from { background-position: 0 0; } to { background-position: 40px 0; } }
+
+        .workstation { display: flex; flex-direction: column; align-items: center; width: 26%; position: relative; z-index: 2; transition: transform 0.3s ease; }
+        .ws-title { font-size: 0.8rem; font-weight: 700; color: #f8fafc; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.05em; border-bottom: 2px solid #10b981; padding-bottom: 2px; }
+        
+        .andon-tower { display: flex; flex-direction: column; background: #0f172a; padding: 4px; border-radius: 6px; border: 2px solid #475569; margin-bottom: 8px; gap: 3px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .light { width: 16px; height: 16px; border-radius: 50%; background: #1e293b; transition: all 0.3s ease; }
+        .workstation.status-green .light.green { background: #10b981; box-shadow: 0 0 12px #10b981; }
+        .workstation.status-yellow .light.yellow { background: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
+        .workstation.status-red .light.red { background: #ef4444; box-shadow: 0 0 12px #ef4444; animation: flash 0.6s infinite alternate; }
+        @keyframes flash { from { opacity: 0.3; } to { opacity: 1; box-shadow: 0 0 16px #ef4444; } }
+
+        .ws-display { background: #090d16; border-radius: 6px; padding: 4px 8px; text-align: center; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 8px; border: 1px solid #1e293b; }
+        .ws-display .cycle-time { font-family: monospace; font-size: 0.9rem; font-weight: 700; color: #38bdf8; }
+        .ws-display .efficiency { font-size: 0.65rem; font-weight: 600; color: #64748b; margin-top: 1px; }
+
+        .ws-structure { width: 100%; height: 50px; background: linear-gradient(135deg, #475569, #334155); border: 2px solid #64748b; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #94a3b8; }
+        
+        .moving-box { position: absolute; width: 22px; height: 22px; background: #b45309; border: 1px solid #78350f; border-radius: 4px; top: 117px; z-index: 3; animation: flowBox 5s linear infinite; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .box-2 { animation-delay: 1.6s; }
+        .box-3 { animation-delay: 3.2s; }
+
+        .reparo-loop-area { display: flex; justify-content: center; align-items: center; position: relative; width: 100%; border-top: 2px dashed #334155; padding-top: 25px; }
+        .ws-reparo-exclusivo { width: 250px; background: #1e293b; padding: 15px; border-radius: 10px; border: 2px dashed #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; }
+        .ws-reparo-exclusivo .ws-structure { background: linear-gradient(135deg, #7f1d1d, #991b1b); border-color: #ef4444; color: #fca5a5; }
+        
+        .defection-arrow { position: absolute; font-size: 0.75rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 5px; animation: pulseArrow 1s infinite alternate; }
+        .arrow-from-montagem { top: -20px; left: 15%; transform: rotate(45deg); }
+        .arrow-from-teste { top: -20px; left: 45%; transform: rotate(90deg); }
+        .arrow-from-embalagem { top: -20px; right: 15%; transform: rotate(-45deg); }
+        
+        .return-arrow-validated { position: absolute; bottom: 105px; left: 38%; font-size: 0.75rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 5px; transform: rotate(-115deg); animation: pulseArrowGreen 1s infinite alternate; }
+
+        @keyframes flowBox { 0% { left: 4%; transform: rotate(0deg); opacity: 1; } 85% { opacity: 1; } 100% { left: 92%; transform: rotate(360deg); opacity: 0; } }
+        @keyframes pulseArrow { from { opacity: 0.4; } to { opacity: 1; } }
+        @keyframes pulseArrowGreen { from { opacity: 0.5; transform: rotate(-115deg) scale(0.95); } to { opacity: 1; transform: rotate(-115deg) scale(1.05); } }
+
+        .suggestion-box { background-color: rgba(30, 58, 138, 0.3); border-left: 4px solid #3b82f6; border-radius: 0 12px 12px 0; padding: 24px; min-height: 160px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        .suggestion-box::before { content: "\f0eb"; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; bottom: -20px; right: 20px; font-size: 9rem; color: rgba(59, 130, 246, 0.05); pointer-events: none; user-select: none; }
+        .suggestion-box h4 { font-size: 0.85rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; position: relative; z-index: 2; }
+        .suggestion-text { font-size: 0.95rem; color: #93c5fd; font-weight: 600; font-style: italic; position: relative; z-index: 2; line-height: 1.5; }
+
+        .sim-btn { background: #334155; color: #f1f5f9; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
+        .sim-btn:hover { background: #475569; border-color: #64748b; }
+        .sim-btn.btn-in { background: #065f46; border-color: #047857; color: #a7f3d0; }
+        .sim-btn.btn-in:hover { background: #047857; }
+        .sim-btn.btn-out { background: #991b1b; border-color: #b91c1c; color: #fca5a5; }
+        .sim-btn.btn-out:hover { background: #b91c1c; }
+        .sim-btn.btn-posto { background: #1e3a8a; border-color: #1d4ed8; color: #bfdbfe; }
+        .sim-btn.btn-posto:hover { background: #1d4ed8; }
+        .sim-btn.btn-reparo { background: #7c2d12; border-color: #9a3412; color: #ffedd5; }
+        .sim-btn.btn-reparo:hover { background: #9a3412; }
+
+        .admin-form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .admin-form-group label { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+        .admin-input-text { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; color: #f8fafc; font-family: monospace; outline: none; width: 100%; transition: border-color 0.2s; }
+        .admin-input-text:focus { border-color: #a3e635; }
+        .admin-save-btn { background: linear-gradient(135deg, #a3e635, #65a30d); color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
+        .admin-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(163,230,53,0.15); }
+
+        .excel-exporter-box { margin-top: 24px; padding-top: 24px; border-top: 1px dashed #334155; }
+        .excel-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+        
+        .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
+
+        /* PAINEL ADMIN LATERAL FLUTUANTE (LIVRE - NÃO BLOQUEIA OUTRAS ABAS) */
+        .admin-sidebar-panel { 
+            position: fixed; 
+            top: 0; 
+            right: -480px; 
+            width: 480px; 
+            height: 100vh; 
+            background: #1e293b; 
+            border-left: 2px solid #334155; 
+            box-shadow: -8px 0 20px rgba(0, 0, 0, 0.4); 
+            z-index: 999; 
+            display: flex; 
+            flex-direction: column; 
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .admin-sidebar-panel.open {
+            right: 0; 
+        }
+        .modal-header { background: #151f32; padding: 18px 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 1.05rem; font-weight: 700; color: #a3e635; display: flex; align-items: center; gap: 10px; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
+        .modal-close:hover { color: #ef4444; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div>
+            <div class="sidebar-header">
+                <h1><i class="fa-solid fa-cubes-stacked" style="color: #a3e635;"></i> PROJETO HACKWEB</h1>
+                <span>Residência em TIC 29</span>
+                <span style="color: #64748b; font-size: 0.7rem; font-weight: bold;">Network: Sepolia Testnet</span>
+            </div>
+            <nav>
+                <button onclick="switchTab('producao', this)" class="tab-btn active"><i class="fa-solid fa-chart-line"></i> Prod. & Qualidade</button>
+                <button onclick="switchTab('reparo', this)" class="tab-btn"><i class="fa-solid fa-tools"></i> Análise & Reparo</button>
+                <button onclick="switchTab('processos', this)" class="tab-btn"><i class="fa-solid fa-gears"></i> Eng. de Processos</button>
+                <button onclick="switchTab('melhoria', this)" class="tab-btn"><i class="fa-solid fa-arrow-up-right-dots"></i> Melhoria Contínua</button>
+                <button onclick="tentarAcessarAdmin()" class="tab-btn admin-btn"><i class="fa-solid fa-user-gear"></i> Painel Config Admin</button>
+            </nav>
+        </div>
+        <div class="status-block">
+            <span id="blockchain-dot" class="status-dot"></span> 
+            <span id="blockchain-status-text">Buscando MetaMask...</span>
+        </div>
+    </aside>
+
+    <main id="main-content">
+        <header>
+            <div>
+                <h2 id="page-title">Gestão de Rastreabilidade Operacional em Linha</h2>
+                <p id="page-subtitle">Monitoramento e imutabilidade de dados industriais via Blockchain.</p>
+            </div>
+            
+            <div class="filters-group">
+                <div class="filter-container" id="filtroDataUnica">
+                    <i class="fa-regular fa-calendar" style="color: #10b981;"></i>
+                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input"></div>
+                </div>
+
+                <div class="filter-container" id="filtroTurno">
+                    <i class="fa-regular fa-clock" style="color: #10b981;"></i>
+                    <div>
+                        <label>Turno</label>
+                        <select id="turnoSelect" class="filter-select">
+                            <option value="1" selected>Turno 1</option>
+                            <option value="2">Turno 2</option>
+                        </select>
+                    </div>
+                    <div id="horarioTurnoTexto" class="turno-horario">Horário: <b>07:00 às 17:00</b></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="producao" class="tab-content active">
+            <div class="watermark"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-grid">
+                <div class="card" id="card-meta">
+                    <div class="card-header">Meta do Dia <i class="fa-solid fa-bullseye"></i></div>
+                    <div class="card-value" id="kpi-meta">0 / 200 un</div>
+                    <div class="progress-bar"><div class="progress-fill" id="kpi-progresso"></div></div>
+                </div>
+                <div class="card" id="card-dpmu">
+                    <div class="card-header">DPMU <i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="card-value" id="kpi-dpmu">0</div>
+                    <div class="card-sub" id="kpi-dpmu-status">Sem registros</div>
+                </div>
+                <div class="card" id="card-fpy">
+                    <div class="card-header">First Pass Yield (FPY) <i class="fa-solid fa-percent"></i></div>
+                    <div class="card-value" id="kpi-fpy">0%</div>
+                    <div class="card-sub" id="kpi-fpy-status">Sem registros</div>
+                </div>
+                <div class="card" id="card-operadores">
+                    <div class="card-header">Operadores Ativos <i class="fa-solid fa-users"></i></div>
+                    <div class="card-value" id="kpi-operadores">0 em linha</div>
+                    <div class="card-sub" id="kpi-operadores-status">Aguardando login</div>
+                </div>
+            </div>
+            <div class="chart-grid-3x1">
+                <div class="chart-container"><h3>Acompanhamento Hora a Hora</h3><div style="height:260px;"><canvas id="chartHoraHora"></canvas></div></div>
+                <div class="chart-container"><h3>Distribuição de Peças por Status</h3><div style="height:260px;"><canvas id="chartStatusBarras"></canvas></div></div>
+                <div class="chart-container"><h3>Tendência DPMU</h3><div style="height:260px;"><canvas id="chartDpmuHora"></canvas></div></div>
+            </div>
+        </div>
+
+        <div id="reparo" class="tab-content">
+            <div class="watermark"><i class="fa-solid fa-tools"></i></div>
+            <div class="kpi-grid">
+                <div class="card">
+                    <div class="card-header">Total Entradas Reparo <i class="fa-solid fa-arrow-right-to-bracket" style="color:#ef4444;"></i></div>
+                    <div class="card-value" id="kpi-reparo-entradas" style="color: #f87171;">0</div>
+                    <div class="card-sub">Reprovações encontradas</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Total Saídas Liberações <i class="fa-solid fa-arrow-right-from-bracket" style="color:#10b981;"></i></div>
+                    <div class="card-value" id="kpi-reparo-saidas" style="color: #34d399;">0</div>
+                    <div class="card-sub">Peças recuperadas</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Loops Ineficientes <i class="fa-solid fa-arrows-spin" style="color:#f59e0b;"></i></div>
+                    <div class="card-value" id="kpi-reparo-retrabalho" style="color: #fbbf24;">0 <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span></div>
+                    <div class="card-sub">Reincidência de Chassi</div>
+                </div>
+            </div>
+            <div class="chart-grid-2x2">
+                <div class="chart-container"><h3>Fluxo: Entradas vs Saídas</h3><div style="height:270px;"><canvas id="chartFluxoReparo"></canvas></div></div>
+                <div class="chart-container"><h3>Loops por Tipo de Defeito</h3><div style="height:270px;"><canvas id="chartRetrabalhoSerie"></canvas></div></div>
+            </div>
+        </div>
+
+        <div id="processos" class="tab-content">
+            <div class="watermark"><i class="fa-solid fa-gears"></i></div>
+            <div class="chart-grid-2x2">
+                <div class="chart-container"><h3>Takt Time vs Tempo de Ciclo</h3><div style="height:270px;"><canvas id="chartTaktTime"></canvas></div></div>
+                <div class="chart-container"><h3>Cronoanálise (% Agregação de Valor)</h3><div style="height:270px;"><canvas id="chartCrono"></canvas></div></div>
+            </div>
+
+            <div class="andon-wrapper">
+                <h3>Mapeamento Andon & Fluxo de Refugo/Retrabalho</h3>
+                <div class="industrial-floor">
+                    <div class="production-line">
+                        <div class="conveyor-belt"></div>
+                        <div class="moving-box"></div>
+                        <div class="moving-box box-2"></div>
+                        <div class="moving-box box-3"></div>
+
+                        <div class="workstation" id="ws-montagem">
+                            <div class="ws-title">Montagem</div>
+                            <div class="ws-display">
+                                <div class="cycle-time" id="val-t-montagem">0s</div>
+                                <div class="efficiency" id="val-e-montagem">0%</div>
+                            </div>
+                            <div class="andon-tower"><div class="light red"></div><div class="light yellow"></div><div class="light green"></div></div>
+                            <div class="ws-structure"><i class="fa-solid fa-screwdriver-transform"></i></div>
+                        </div>
+
+                        <div class="workstation" id="ws-teste">
+                            <div class="ws-title">Teste Funcional</div>
+                            <div class="ws-display">
+                                <div class="cycle-time" id="val-t-teste">0s</div>
+                                <div class="efficiency" id="val-e-teste">0%</div>
+                            </div>
+                            <div class="andon-tower"><div class="light red"></div><div class="light yellow"></div><div class="light green"></div></div>
+                            <div class="ws-structure"><i class="fa-solid fa-laptop-code"></i></div>
+                        </div>
+
+                        <div class="workstation" id="ws-embalagem">
+                            <div class="ws-title">Embalagem</div>
+                            <div class="ws-display">
+                                <div class="cycle-time" id="val-t-embalagem">0s</div>
+                                <div class="efficiency" id="val-e-embalagem">0%</div>
+                            </div>
+                            <div class="andon-tower"><div class="light red"></div><div class="light yellow"></div><div class="light green"></div></div>
+                            <div class="ws-structure"><i class="fa-solid fa-box-open"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="reparo-loop-area">
+                        <div class="defection-arrow arrow-from-montagem"><i class="fa-solid fa-arrow-down"></i> Rejeito Montagem</div>
+                        <div class="defection-arrow arrow-from-teste"><i class="fa-solid fa-arrow-down"></i> Rejeito Teste</div>
+                        <div class="defection-arrow arrow-from-embalagem"><i class="fa-solid fa-arrow-down"></i> Rejeito Embalagem</div>
+                        <div class="return-arrow-validated"><i class="fa-solid fa-arrow-up"></i> Retorno Pós-Reparo (Re-Teste)</div>
+
+                        <div class="workstation ws-reparo-exclusivo" id="ws-reparo">
+                            <div class="ws-title" style="border-color:#ef4444;">Posto de Reparo Externo</div>
+                            <div class="ws-display">
+                                <div class="cycle-time" id="val-t-reparo" style="color:#ef4444;">0s</div>
+                                <div class="efficiency" id="val-e-reparo">0%</div>
+                            </div>
+                            <div class="andon-tower"><div class="light red"></div><div class="light yellow"></div><div class="light green"></div></div>
+                            <div class="ws-structure"><i class="fa-solid fa-hammer"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="melhoria" class="tab-content">
+            <div class="watermark"><i class="fa-solid fa-arrow-up-right-dots"></i></div>
+            <div class="chart-grid-2x2">
+                <div class="chart-container"><h3>Análise Combinada de Gargalo</h3><div style="height:270px;"><canvas id="chartGargalos"></canvas></div></div>
+                <div class="chart-container"><h3>Balanço Mão de Obra (Previsto vs Real Bipado)</h3><div style="height:270px;"><canvas id="chartPizzaHC"></canvas></div></div>
+            </div>
+            <div class="chart-grid-2x2">
+                <div class="chart-container"><h3>Pareto: Defeitos por Posto</h3><div style="height:270px;"><canvas id="chartDefeitos"></canvas></div></div>
+                <div class="suggestion-box" style="display: flex; flex-direction: column; justify-content: center;">
+                    <h4><i class="fa-solid fa-lightbulb"></i> Insight para Tomada de Decisão (Engenharia)</h4>
+                    <p id="textoSugestao" class="suggestion-text">Aguardando sincronização de dados estáveis.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="admin-modal" class="admin-sidebar-panel">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-user-gear"></i> Painel de Controle Admin</h2>
+            <button class="modal-close" onclick="fecharModalAdmin()">&times;</button>
+        </div>
+        <div class="modal-body">
+            
+            <div id="console-acoes-rapidas" style="background: #0f172a; border: 1px solid #334155; padding: 16px; border-radius: 10px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222e45; padding-bottom: 8px;">
+                    <span><i class="fa-solid fa-tower-broadcast"></i> CONSOLE DE SIMULAÇÃO EM TEMPO REAL</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Simular Entrada/Saída de Operador:</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="simularBipagemCracha(true)" class="sim-btn btn-in" style="flex:1; justify-content:center;"><i class="fa-solid fa-user-plus"></i> Inserir Operador</button>
+                            <button onclick="simularBipagemCracha(false)" class="sim-btn btn-out" style="flex:1; justify-content:center;"><i class="fa-solid fa-user-minus"></i> Remover Operador</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 0.65rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Injetar Passagem Manual de Peça:</span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                            <button onclick="simularPassagemPeca('montagem')" class="sim-btn btn-posto" style="justify-content:center;">Posto Montagem</button>
+                            <button onclick="simularPassagemPeca('teste')" class="sim-btn btn-posto" style="justify-content:center;">Posto Teste Func.</button>
+                            <button onclick="simularPassagemPeca('reparo')" class="sim-btn btn-reparo" style="justify-content:center;"><i class="fa-solid fa-hammer"></i> Posto Reparo</button>
+                            <button onclick="simularPassagemPeca('embalagem')" class="sim-btn btn-in" style="background:#10b981; border-color:#059669; color:#fff; justify-content:center;">Posto Embalagem</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: #f1f5f9; font-size: 0.85rem; margin-bottom: 10px;"><i class="fa-solid fa-sliders"></i> Ajuste de Diretrizes</h3>
+            <div class="admin-parameter-grid">
+                <div class="admin-form-group" style="margin-bottom:0;">
+                    <label style="font-size:0.65rem; color:#a3e635;">Meta Alvo</label>
+                    <input type="number" id="inputMeta" class="admin-input-text" value="200" min="1" oninput="renderizarLayoutCalculos()" style="padding: 6px 10px;">
+                </div>
+                <div class="admin-form-group" style="margin-bottom:0;">
+                    <label style="font-size:0.65rem; color:#f59e0b;">Limite DPMU</label>
+                    <input type="number" id="inputDPMU" class="admin-input-text" value="1500" min="0" step="100" oninput="renderizarLayoutCalculos()" style="padding: 6px 10px;">
+                </div>
+                <div class="admin-form-group" style="margin-bottom:0;">
+                    <label style="font-size:0.65rem; color:#38bdf8;">HC Previsto</label>
+                    <input type="number" id="inputHC" class="admin-input-text" value="12" min="1" oninput="renderizarLayoutCalculos()" style="padding: 6px 10px;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 24px;">
+                <button onclick="zerarTudoSistema()" class="sim-btn btn-out" style="padding: 10px; border-radius: 8px; background: #7f1d1d; border-color: #b91c1c;">
+                    <i class="fa-solid fa-trash-can"></i> Limpar Painel
+                </button>
+                <button onclick="salvarConfiguracoesAdmin()" class="admin-save-btn" style="flex:1; justify-content:center;"><i class="fa-solid fa-floppy-disk"></i> Sincronizar Web3</button>
+            </div>
+
+            <h3 style="color: #a3e635; font-size:0.85rem; margin-bottom: 10px;"><i class="fa-solid fa-link"></i> Infraestrutura Web3</h3>
+            <div class="admin-form-group">
+                <label style="font-size: 0.7rem;">Contrato (Sepolia)</label>
+                <input type="text" id="adminContractInput" class="admin-input-text" placeholder="0x...">
+            </div>
+            <div class="admin-form-group">
+                <label style="font-size: 0.7rem;">Carteira Oráculo</label>
+                <input type="text" id="adminWalletInput" class="admin-input-text" placeholder="0x...">
+            </div>
+
+            <div class="excel-exporter-box">
+                <h3 style="color: #38bdf8; font-size: 0.85rem; margin-bottom: 10px;"><i class="fa-solid fa-file-excel"></i> Exportação de Histórico</h3>
+                <div class="excel-inputs-row">
+                    <div class="admin-form-group" style="margin-bottom:0;">
+                        <label style="font-size: 0.65rem;">Início</label>
+                        <input type="date" id="excelDataInicio" class="admin-input-text" style="padding:6px 10px;">
+                    </div>
+                    <div class="admin-form-group" style="margin-bottom:0;">
+                        <label style="font-size: 0.65rem;">Fim</label>
+                        <input type="date" id="excelDataFim" class="admin-input-text" style="padding:6px 10px;">
+                    </div>
+                    <div class="admin-form-group" style="margin-bottom:0;">
+                        <label style="font-size: 0.65rem;">Turno</label>
+                        <select id="excelTurno" class="admin-input-text" style="padding:6px 10px; height:34px; font-size:0.8rem;">
+                            <option value="todos">Todos</option>
+                            <option value="1">Turno 1</option>
+                            <option value="2">Turno 2</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="gerarRelatorioExcelRastreabilidade()" class="sim-btn" style="width: 100%; background: #16a34a; border-color: #15803d; color: white; padding: 10px; border-radius: 8px; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-download"></i> Gerar Planilha Excel (.xlsx)
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        
+        const hojeStr = new Date().toISOString().split('T')[0];
+        document.getElementById('dataFiltro').value = hojeStr;
+        document.getElementById('excelDataInicio').value = hojeStr;
+        document.getElementById('excelDataFim').value = hojeStr;
+
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#334155';
+
+        // VARIÁVEIS OPERACIONAIS GLOBAIS
+        let atualProduzido = 0; 
+        let atualDPMU = 0; 
+        let totalBipadoReal = 0; 
+        let entradasReparo = 0;
+        let saidasReparo = 0;
+        let loopsRetrabalho = 0;
+        
+        let pecasMontagem = 0;
+        let pecasTeste = 0;
+        let falhasTorque = 0;
+        let falhasFuncionais = 0;
+
+        let chart1, chart2, chartDpmu, chartReparoFluxo, chartReparoSerie, chart3, chart4, chart5, chartPizzaHC, chart6;
+        
+        // RECUPERAÇÃO DAS DIRETRIZES DA BLOCKCHAIN
+        let contractAddress = localStorage.getItem('web3_contract_address') || "0x0000000000000000000000000000000000000000";
+        let adminWalletAddress = localStorage.getItem('web3_admin_wallet') || "0x0000000000000000000000000000000000000000";
+
+        document.getElementById('adminContractInput').value = contractAddress !== "0x0000000000000000000000000000000000000000" ? contractAddress : "";
+        document.getElementById('adminWalletInput').value = adminWalletAddress !== "0x0000000000000000000000000000000000000000" ? adminWalletAddress : "";
+
+        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3 COM O CONTRATO DO REMIX
+        const contratoABI = [
+            "function registrarPassagem(string memory _chassi, string memory _posto, string memory _operador, bool _statusSucesso) public",
+            "function alterarStatusOperador(string memory _operador, bool _entrou) public",
+            "function consultarHistorico(string memory _chassi) public view returns (tuple(string posto, uint256 timestamp, string operador, bool statusSucesso)[])"
+        ];
+
+        function gerarNovoChassi() {
+            return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        // GERENCIAMENTO VISUAL DO PAINEL ADMIN FLUTUANTE
+        function tentarAcessarAdmin() {
+            const user = prompt("Digite o Usuário Administrador:");
+            const pass = prompt("Digite a Senha Administrador:");
+            if (user === "admin" && pass === "admin") {
+                document.getElementById('admin-modal').classList.add('open');
+                document.getElementById('main-content').style.marginRight = '480px'; 
+            } else {
+                alert("🔒 Acesso negado!");
+            }
+        }
+
+        function fecharModalAdmin() {
+            document.getElementById('admin-modal').classList.remove('open');
+            document.getElementById('main-content').style.marginRight = '0px';
+        }
+
+        async function conectarBlockchain() {
+            if (typeof window.ethereum !== 'undefined') {
+                document.getElementById('blockchain-status-text').innerText = "MetaMask Pronta (Sepolia)";
+                document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
+            } else {
+                document.getElementById('blockchain-status-text').innerText = "Sem MetaMask (Modo Local)";
+                document.getElementById('blockchain-dot').style.backgroundColor = "#64748b";
+            }
+        }
+
+        // 1. SIMULAR BIPAGEM DE CRÁCHÁ INTEGRADO À METAMASK
+        async function simularBipagemCracha(isEntrada) {
+            const contractAddress = localStorage.getItem('web3_contract_address');
+            
+            if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
+                alert("⚠️ Insira o endereço do contrato minerado no painel Admin primeiro!");
+                return;
+            }
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    document.getElementById('blockchain-status-text').innerText = "Aguardando MetaMask...";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#f59e0b";
+
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await provider.getSigner();
+                    const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
+
+                    const nomeOperador = isEntrada ? "Op_Silvia" : "Op_Marcos";
+                    
+                    // CHAMADA DA TRANSAÇÃO REAL NA ETHEREUM SEPOLIA
+                    const tx = await contrato.alterarStatusOperador(nomeOperador, isEntrada);
+                    
+                    document.getElementById('blockchain-status-text').innerText = "Minerando Bloco...";
+                    await tx.wait(); 
+
+                    // Atualização após aprovação na Blockchain
+                    if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
+                    renderizarLayoutCalculos();
+                    
+                    document.getElementById('blockchain-status-text').innerText = "Sincronizado via Web3";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
+
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('blockchain-status-text').innerText = "Erro na Transação";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
+                    alert("Transação rejeitada na carteira ou falhou.");
+                }
+            } else {
+                alert("MetaMask não detectada!");
+            }
+        }
+
+        // 2. SIMULAR PASSAGEM DE PEÇA INTEGRADO À METAMASK
+        async function simularPassagemPeca(posto) {
+            const contractAddress = localStorage.getItem('web3_contract_address');
+            
+            if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
+                alert("⚠️ Insira o endereço do contrato minerado no painel Admin primeiro!");
+                return;
+            }
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    document.getElementById('blockchain-status-text').innerText = "Aguardando MetaMask...";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#f59e0b";
+
+                    const provider = new ethers.BrowserProvider(window.ethereum);
+                    const signer = await provider.getSigner();
+                    const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
+
+                    const chassiAleatorio = generarNovoChassi();
+                    const horaIndex = 7; 
+                    let statusSucesso = true;
+
+                    if (posto === 'reparo') { statusSucesso = false; }
+
+                    // CHAMADA DA TRANSAÇÃO REAL NA ETHEREUM SEPOLIA
+                    const tx = await contrato.registrarPassagem(chassiAleatorio, posto, "Op_Linha", statusSucesso);
+                    
+                    document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
+                    await tx.wait(); 
+
+                    // Execução dos Gráficos Locais pós-confirmação dos Blocos
+                    if (posto === 'montagem') {
+                        pecasMontagem++;
+                        chart3.data.datasets[0].data[0] = Math.floor(Math.random() * 10) + 38;
+                    } 
+                    else if (posto === 'teste') {
+                        pecasTeste++;
+                        chart3.data.datasets[0].data[1] = Math.floor(Math.random() * 10) + 40;
+                    } 
+                    else if (posto === 'reparo') {
+                        entradasReparo++;
+                        loopsRetrabalho++;
+                        atualDPMU += 250; 
+                        if (entradasReparo % 2 === 0) { falhasTorque++; } else { falhasFuncionais++; }
+                        chart2.data.datasets[1].data[horaIndex] += 1;
+                        chartReparoFluxo.data.datasets[0].data[horaIndex] += 1;
+                        chart3.data.datasets[0].data[2] = Math.floor(Math.random() * 12) + 25;
+                    } 
+                    else if (posto === 'embalagem') {
+                        atualProduzido++;
+                        if (entradasReparo > saidasReparo) {
+                            saidasReparo++;
+                            chartReparoFluxo.data.datasets[1].data[horaIndex] += 1;
+                        }
+                        chart1.data.datasets[0].data[horaIndex] += 1;
+                        chart2.data.datasets[0].data[horaIndex] += 1;
+                        chart3.data.datasets[0].data[3] = Math.floor(Math.random() * 8) + 35;
+                    }
+
+                    let totalInjetado = atualProduzido + entradasReparo;
+                    if (totalInjetado > 0) {
+                        let recalculadoFPY = ((totalInjetado - entradasReparo) / totalInjetado) * 100;
+                        document.getElementById('kpi-fpy').innerText = recalculadoFPY.toFixed(1) + '%';
+                    }
+
+                    renderizarLayoutCalculos();
+                    document.getElementById('blockchain-status-text').innerText = "Dados Gravados!";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
+
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('blockchain-status-text').innerText = "Erro Web3";
+                    document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
+                    alert("Falha ao registrar dados operacionais na Blockchain.");
+                }
+            }
+        }
+
+        function salvarConfiguracoesAdmin() {
+            const rawContract = document.getElementById('adminContractInput').value.trim();
+            const rawWallet = document.getElementById('adminWalletInput').value.trim();
+            localStorage.setItem('web3_contract_address', rawContract);
+            localStorage.setItem('web3_admin_wallet', rawWallet);
+            alert("⚙️ Diretrizes Web3 sincronizadas localmente!");
+        }
+
+        function zerarTudoSistema() {
+            atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
+            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
+            document.getElementById('kpi-fpy').innerText = '0%';
+
+            chart1.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            chart2.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            chart2.data.datasets[1].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            chartDpmu.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            chartReparoFluxo.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            chartReparoFluxo.data.datasets[1].data = [0, 0, 0, 0, 0, 0, 0, 0];
+            
+            chart3.data.datasets[0].data = [0, 0, 0, 0];
+            chart4.data.datasets[0].data = [0, 0, 0, 0];
+            chart5.data.datasets[0].data = [0, 0, 0, 0];
+            chart5.data.datasets[1].data = [0, 0, 0, 0];
+            chart6.data.datasets[0].data = [0, 0, 0];
+
+            atualizarAndonFisico([0, 0, 0, 0], [0, 0, 0, 0]);
+            renderizarLayoutCalculos();
+        }
+
+        function renderizarLayoutCalculos() {
+            const targetMeta = parseInt(document.getElementById('inputMeta').value) || 200;
+            const limitDPMU = parseInt(document.getElementById('inputDPMU').value) || 1500;
+            const hcPrevistoIT = parseInt(document.getElementById('inputHC').value) || 12;
+
+            document.getElementById('kpi-meta').innerHTML = `${atualProduzido} <span style="font-size:0.875rem;font-weight:400;color:#94a3b8">/ ${targetMeta} un</span>`;
+            document.getElementById('kpi-progresso').style.width = targetMeta > 0 ? `${Math.min((atualProduzido/targetMeta)*100, 100)}%` : '0%';
+            document.getElementById('card-meta').className = (atualProduzido >= targetMeta && atualProduzido > 0) ? "card status-good" : "card status-bad";
+
+            document.getElementById('kpi-dpmu').innerText = Math.round(atualDPMU).toLocaleString('pt-BR');
+            document.getElementById('card-dpmu').className = (atualDPMU <= limitDPMU) ? "card status-good" : "card status-bad";
+            document.getElementById('kpi-dpmu-status').innerHTML = atualDPMU === 0 ? "Sem registros" : 
+                ((atualDPMU <= limitDPMU) ? `<i class="fa-solid fa-circle-check"></i> Dentro do Limite` : `<i class="fa-solid fa-circle-exclamation"></i> Excedido`);
+
+            let fpyVal = parseFloat(document.getElementById('kpi-fpy').innerText) || 0;
+            document.getElementById('card-fpy').className = (fpyVal >= 95.0 || fpyVal === 0) ? "card status-good" : "card status-bad";
+            document.getElementById('kpi-fpy-status').innerHTML = fpyVal === 0 ? "Sem registros" : 
+                ((fpyVal >= 95.0) ? `<i class="fa-solid fa-circle-check"></i> Estável` : `<i class="fa-solid fa-circle-exclamation"></i> Instável (<95%)`);
+
+            document.getElementById('kpi-operadores').innerHTML = `${totalBipadoReal} <span style="font-size:0.875rem;font-weight:400;color:#94a3b8">em linha</span>`;
+            document.getElementById('card-operadores').className = (totalBipadoReal === hcPrevistoIT) ? "card status-good" : "card status-bad";
+            document.getElementById('kpi-operadores-status').innerHTML = totalBipadoReal === 0 ? "Aguardando login" : 
+                (totalBipadoReal === hcPrevistoIT ? `<i class="fa-solid fa-circle-check"></i> Alocação Ideal` : `<i class="fa-solid fa-triangle-exclamation"></i> Desbalanceado`);
+
+            document.getElementById('kpi-reparo-entradas').innerText = entradasReparo;
+            document.getElementById('kpi-reparo-saidas').innerText = saidasReparo;
+            document.getElementById('kpi-reparo-retrabalho').innerHTML = `${loopsRetrabalho} <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span>`;
+
+            chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8));
+            chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU);
+            
+            let dAccum = 0;
+            chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
+
+            if(chartPizzaHC) chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
+
+            chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
+            chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
+
+            chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
+            
+            atualizarAndonFisico(
+                [chart3.data.datasets[0].data[0], chart3.data.datasets[0].data[1], chart3.data.datasets[0].data[2], chart3.data.datasets[0].data[3]],
+                [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
+            );
+
+            const insightText = document.getElementById('textoSugestao');
+            if(insightText) {
+                insightText.innerHTML = totalBipadoReal === 0 ? "Aguardando entrada de operadores." : 
+                (totalBipadoReal > hcPrevistoIT ? `Sobrecarga identificada: Mão de obra real (${totalBipadoReal} HC) supera a planejada.` : `Processamento balanceado.`);
+            }
+
+            chart1.update(); chart2.update(); chartDpmu.update(); chartReparoFluxo.update(); chartReparoSerie.update(); chart3.update(); chart4.update(); chart6.update(); if(chartPizzaHC) chartPizzaHC.update();
+        }
+
+        function atualizarAndonFisico(tempos, eficiencias) {
+            const postos = ['montagem', 'teste', 'reparo', 'embalagem'];
+            const taktTimePadrão = 45;
+
+            postos.forEach((id, index) => {
+                const tReal = tempos[index] || 0;
+                const efReal = eficiencias[index] || 0;
+                
+                if (document.getElementById(`val-t-${id}`)) document.getElementById(`val-t-${id}`).innerText = tReal + 's';
+                if (document.getElementById(`val-e-${id}`)) document.getElementById(`val-e-${id}`).innerText = 'Eff: ' + efReal + '%';
+
+                const elementWS = document.getElementById(`ws-${id}`);
+                if (elementWS) {
+                    elementWS.classList.remove('status-green', 'status-yellow', 'status-red');
+                    if (tReal === 0 && efReal === 0) return;
+                    
+                    if(tReal > taktTimePadrão) elementWS.classList.add('status-red');
+                    else if(tReal >= taktTimePadrão - 5) elementWS.classList.add('status-yellow');
+                    else elementWS.classList.add('status-green');
+                }
+            });
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            
+            document.getElementById('page-title').innerText = (tabId === 'producao') ? "Gestão de Rastreabilidade Operacional em Linha" : btn.innerText.trim();
+            document.getElementById('card-operadores').style.display = (tabId === 'producao') ? 'block' : 'none';
+        }
+
+        function gerarRelatorioExcelRastreabilidade() {
+            const dataInicio = document.getElementById('excelDataInicio').value;
+            let baseMatrizExcel = [
+                { "Número de serie": "BR26-K1001", "Data": dataInicio, "Montagem": "08:15:22", "Operador (Montagem)": "Op_Silvia", "Reparo": "", "Embalagem": "08:18:40" },
+                { "Número de serie": "BR26-K1002", "Data": dataInicio, "Montagem": "09:02:11", "Operador (Montagem)": "Op_Marcos", "Reparo": "09:10:00", "Embalagem": "09:15:10" }
+            ];
+            const planilha = XLSX.utils.json_to_sheet(baseMatrizExcel);
+            const livro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(livro, planilha, "Rastreabilidade");
+            XLSX.writeFile(livro, `Historico_Rastreabilidade_${dataInicio}.xlsx`);
+        }
+
+        // INSTANCIAÇÃO DOS GRÁFICOS DO COMPONENTE CHART.JS
+        const gridStyle = { color: '#334155', drawBorder: false };
+        const ticksStyle = { color: '#94a3b8' };
+
+        chart1 = new Chart(document.getElementById('chartHoraHora'), {
+            type: 'line',
+            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data: [0,0,0,0,0,0,0,0], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.05)', fill: true, tension: 0.4 }, { label: 'Meta Hora', data: [0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash: [5, 5], fill: false }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
+        });
+
+        chart2 = new Chart(document.getElementById('chartStatusBarras'), {
+            type: 'bar',
+            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } }, datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 20, ticks: ticksStyle } } }
+        });
+
+        chartDpmu = new Chart(document.getElementById('chartDpmuHora'), {
+            type: 'line',
+            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', tension: 0.2, data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash: [4, 4], pointRadius: 0, data:[0,0,0,0,0,0,0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
+        });
+
+        chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), {
+            type: 'bar',
+            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 15, ticks: ticksStyle } } }
+        });
+
+        chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), {
+            type: 'bar',
+            data: { labels: ['Falha Torque', 'Falha Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data: [0,0,0,0] }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, align: 'right', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, stepSize: 1, max: 15, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
+        });
+
+        chart3 = new Chart(document.getElementById('chartTaktTime'), {
+            type: 'bar',
+            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Tempo Ciclo (s)', backgroundColor: '#3b82f6', data: [0,0,0,0] }, { label: 'Takt Time Alvo', data: [45, 45, 45, 45], type: 'line', borderColor: '#f59e0b', borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: (c) => c.dataset.type !== 'line', anchor: 'end', align: 'top', color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 80, ticks: ticksStyle } } }
+        });
+
+        chart4 = new Chart(document.getElementById('chartCrono'), {
+            type: 'bar',
+            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data: [0,0,0,0] }, { label: 'Meta (95%)', data: [95, 95, 95, 95], type: 'line', borderColor: '#10b981', borderDash: [4, 4], pointRadius: 0 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + '%', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, max: 110, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
+        });
+
+        chart5 = new Chart(document.getElementById('chartGargalos'), {
+            type: 'bar',
+            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção (min)', yAxisID: 'y', data:[0,0,0,0], backgroundColor: '#1e3a8a' }, { label: 'Fila (un)', type: 'line', borderColor: '#38bdf8', yAxisID: 'y1', data:[0,0,0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, font: { size: 9 }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { type: 'linear', position: 'left', max: 30, ticks: ticksStyle }, y1: { type: 'linear', position: 'right', max: 35, grid: { display: false }, ticks: ticksStyle } } }
+        });
+
+        chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), {
+            type: 'pie',
+            data: { labels: ['HC Previsto', 'HC Real Realizado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + ' HC', color: '#fff', font: { weight: 'bold' } } } }
+        });
+
+        chart6 = new Chart(document.getElementById('chartDefeitos'), {
+            type: 'bar',
+            data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data: [0,0,0] }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { max: 15, ticks: ticksStyle } } }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            conectarBlockchain();
+            renderizarLayoutCalculos();
+        });
+    </script>
+</body>
+</html>
