@@ -42,7 +42,6 @@
         .filter-select, .filter-input { border: none; background: transparent; font-size: 0.875rem; font-weight: 700; color: #f8fafc; cursor: pointer; outline: none; }
         .filter-select option { background-color: #1e293b; color: #f8fafc; }
         .filter-input[type="number"] { width: 65px; border-bottom: 1px dashed #10b981; text-align: center; }
-        .turno-horario { font-size: 0.825rem; color: #64748b; border-left: 1px solid #334155; padding-left: 12px; height: 100%; display: flex; align-items: center; }
 
         .tab-content { display: none; position: relative; z-index: 5; width: 100%; }
         .tab-content.active { display: block; }
@@ -60,19 +59,18 @@
 
         .progress-bar { width: 100%; background: #334155; height: 8px; border-radius: 4px; margin-top: 12px; overflow: hidden; }
         .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
-        
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
         /* GRIDS DE GRÁFICOS DINÂMICOS E RESPONSIVOS */
         .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; transition: all 0.3s ease; }
         .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; }
         
-        /* AJUSTE DINÂMICO CRUCIAL: Quando a classe 'admin-open' for injetada no body, a aba produção quebra em colunas visíveis de forma adaptável */
+        /* CORREÇÃO VISUAL DEFINITIVA: Quando o painel admin abre, a linha de 3 colunas vira 1 coluna larga e confortável verticalmente */
         body.admin-open .chart-grid-3x1 {
-            grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: 1fr !important;
         }
         body.admin-open .chart-grid-3x1 > :last-child {
-            grid-column: span 2; /* Faz o terceiro gráfico ocupar a linha inteira de baixo quando comprimido */
+            grid-column: span 1 !important;
         }
 
         @media(max-width: 1400px) { 
@@ -110,7 +108,6 @@
         .ws-display { background: #090d16; border-radius: 6px; padding: 4px 8px; text-align: center; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 8px; border: 1px solid #1e293b; }
         .ws-display .cycle-time { font-family: monospace; font-size: 0.9rem; font-weight: 700; color: #38bdf8; }
         .ws-display .efficiency { font-size: 0.65rem; font-weight: 600; color: #64748b; margin-top: 1px; }
-
         .ws-structure { width: 100%; height: 50px; background: linear-gradient(135deg, #475569, #334155); border: 2px solid #64748b; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #94a3b8; }
         
         .moving-box { position: absolute; width: 22px; height: 22px; background: #b45309; border: 1px solid #78350f; border-radius: 4px; top: 117px; z-index: 3; animation: flowBox 5s linear infinite; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
@@ -125,7 +122,6 @@
         .arrow-from-montagem { top: -20px; left: 15%; transform: rotate(45deg); }
         .arrow-from-teste { top: -20px; left: 45%; transform: rotate(90deg); }
         .arrow-from-embalagem { top: -20px; right: 15%; transform: rotate(-45deg); }
-        
         .return-arrow-validated { position: absolute; bottom: 105px; left: 38%; font-size: 0.75rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 5px; transform: rotate(-115deg); animation: pulseArrowGreen 1s infinite alternate; }
 
         @keyframes flowBox { 0% { left: 4%; transform: rotate(0deg); opacity: 1; } 85% { opacity: 1; } 100% { left: 92%; transform: rotate(360deg); opacity: 0; } }
@@ -157,7 +153,6 @@
 
         .excel-exporter-box { margin-top: 24px; padding-top: 24px; border-top: 1px dashed #334155; }
         .excel-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-        
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
         /* PAINEL ADMIN LATERAL FLUTUANTE */
@@ -230,7 +225,6 @@
                             <option value="2">Turno 2</option>
                         </select>
                     </div>
-                    <div id="horarioTurnoTexto" class="turno-horario">Horário: <b>07:00 às 17:00</b></div>
                 </div>
             </div>
         </header>
@@ -494,14 +488,12 @@
 
         let chart1, chart2, chartDpmu, chartReparoFluxo, chartReparoSerie, chart3, chart4, chart5, chartPizzaHC, chart6;
         
-        // RECUPERAÇÃO DAS DIRETRIZES DA BLOCKCHAIN
         let contractAddress = localStorage.getItem('web3_contract_address') || "0x0000000000000000000000000000000000000000";
         let adminWalletAddress = localStorage.getItem('web3_admin_wallet') || "0x0000000000000000000000000000000000000000";
 
         document.getElementById('adminContractInput').value = contractAddress !== "0x0000000000000000000000000000000000000000" ? contractAddress : "";
         document.getElementById('adminWalletInput').value = adminWalletAddress !== "0x0000000000000000000000000000000000000000" ? adminWalletAddress : "";
 
-        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3 (EXATAMENTE COMO O SEU CONTRATO SOLIDITY PEDE)
         const contratoABI = [
             "function registrarPassagem(string memory _chassi, string memory _posto, string memory _operador, bool _statusSucesso) public",
             "function alterarStatusOperador(string memory _operador, bool _entrou) public",
@@ -512,14 +504,13 @@
             return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
         }
 
-        // GERENCIAMENTO VISUAL DO PAINEL ADMIN E INTEGRAÇÃO DE LAYOUT ADAPTÁVEL
         function tentarAcessarAdmin() {
             const user = prompt("Digite o Usuário Administrador:");
             const pass = prompt("Digite a Senha Administrador:");
             if (user === "admin" && pass === "admin") {
                 document.getElementById('admin-modal').classList.add('open');
                 document.getElementById('main-content').style.marginRight = '480px'; 
-                document.getElementById('app-body').classList.add('admin-open'); // ATIVA AJUSTE DE COLUNAS DA ABA PRODUÇÃO
+                document.getElementById('app-body').classList.add('admin-open');
             } else {
                 alert("🔒 Acesso negado!");
             }
@@ -528,7 +519,7 @@
         function fecharModalAdmin() {
             document.getElementById('admin-modal').classList.remove('open');
             document.getElementById('main-content').style.marginRight = '0px';
-            document.getElementById('app-body').classList.remove('admin-open'); // DESATIVA AJUSTE DE COLUNAS
+            document.getElementById('app-body').classList.remove('admin-open');
         }
 
         async function conectarBlockchain() {
@@ -541,7 +532,6 @@
             }
         }
 
-        // 1. SIMULAR BIPAGEM DE CRÁCHÁ INTEGRADO À METAMASK
         async function simularBipagemCracha(isEntrada) {
             const contractAddress = localStorage.getItem('web3_contract_address');
             
@@ -560,7 +550,6 @@
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
 
                     const nomeOperador = isEntrada ? "Op_Silvia" : "Op_Marcos";
-                    
                     const tx = await contrato.alterarStatusOperador(nomeOperador, isEntrada);
                     
                     document.getElementById('blockchain-status-text').innerText = "Minerando Bloco...";
@@ -578,12 +567,9 @@
                     document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
                     alert("Transação rejeitada na carteira ou falhou.");
                 }
-            } else {
-                alert("MetaMask não detectada!");
             }
         }
 
-        // 2. SIMULAR PASSAGEM DE PEÇA (TRATAMENTO DE TIPAGEM ESTREITA COMPATÍVEL COM SEU SMART CONTRACT)
         async function simularPassagemPeca(posto) {
             const contractAddress = localStorage.getItem('web3_contract_address');
             
@@ -601,24 +587,19 @@
                     const signer = await provider.getSigner();
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
 
-                    // Criação de variáveis com tipagem limpa antes de enviar para o Ethers v6
                     const chassiAleatorio = String(gerarNovoChassi());
                     const nomePosto = String(posto);
                     const nomeOperador = "Op_Linha";
                     
-                    // Definição explícita do boolean exigido pelo seu contract (true se for diferente de 'reparo')
                     let statusSucesso = true;
                     if (posto === 'reparo') {
                         statusSucesso = false;
                     }
 
-                    // Envio limpo e estruturado para evitar erros de Gas Estimation no Solidity
                     const tx = await contrato.registrarPassagem(chassiAleatorio, nomePosto, nomeOperador, statusSucesso);
-                    
                     document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
                     await tx.wait(); 
 
-                    // --- ATUALIZAÇÃO DOS GRÁFICOS LOCAIS PÓS-MINERAÇÃO ---
                     const horaIndex = 7; 
 
                     if (posto === 'montagem') {
@@ -660,10 +641,9 @@
                     document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
 
                 } catch (error) {
-                    console.error("Erro detalhado da transação:", error);
+                    console.error(error);
                     document.getElementById('blockchain-status-text').innerText = "Erro Web3";
                     document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
-                    alert("Falha ao registrar dados operacionais na Blockchain. Verifique se a rede Sepolia está ativa na MetaMask.");
                 }
             }
         }
@@ -733,22 +713,14 @@
             chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
 
             if(chartPizzaHC) chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
-
             chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
             chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
-
             chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
             
             atualizarAndonFisico(
                 [chart3.data.datasets[0].data[0], chart3.data.datasets[0].data[1], chart3.data.datasets[0].data[2], chart3.data.datasets[0].data[3]],
                 [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
             );
-
-            const insightText = document.getElementById('textoSugestao');
-            if(insightText) {
-                insightText.innerHTML = totalBipadoReal === 0 ? "Aguardando entrada de operadores." : 
-                (totalBipadoReal > hcPrevistoIT ? `Sobrecarga identificada: Mão de obra real (${totalBipadoReal} HC) supera a planejada.` : `Processamento balanceado.`);
-            }
 
             chart1.update(); chart2.update(); chartDpmu.update(); chartReparoFluxo.update(); chartReparoSerie.update(); chart3.update(); chart4.update(); chart6.update(); if(chartPizzaHC) chartPizzaHC.update();
         }
@@ -799,7 +771,6 @@
             XLSX.writeFile(livro, `Historico_Rastreabilidade_${dataInicio}.xlsx`);
         }
 
-        // INSTANCIAÇÃO DOS GRÁFICOS DO COMPONENTE CHART.JS
         const gridStyle = { color: '#334155', drawBorder: false };
         const ticksStyle = { color: '#94a3b8' };
 
