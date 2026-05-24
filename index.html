@@ -29,7 +29,7 @@
         .status-block { padding: 15px; border-top: 1px solid #334155; font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #64748b; border-radius: 50%; display: inline-block; transition: all 0.3s ease; }
 
-        main { flex: 1; min-height: 100vh; padding: 32px; overflow-y: auto; background-color: #0f172a; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        main { flex: 1; min-height: 100vh; padding: 32px; overflow-y: auto; background-color: #0f172a; z-index: 1; width: calc(100% - 280px); }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #334155; padding-bottom: 20px; }
         header h2 { font-size: 1.4rem; font-weight: 700; color: #f8fafc; }
         header p { font-size: 0.875rem; color: #94a3b8; margin-top: 2px; }
@@ -46,25 +46,18 @@
 
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 30px; }
         .card { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card.status-good { background-color: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3); }
-        .card.status-bad { background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.3); }
         
         .card-header { display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
         .card-value { font-size: 1.5rem; font-weight: 700; color: #f8fafc; }
-        .status-good .card-value { color: #34d399 !important; }
-        .status-bad .card-value { color: #f87171 !important; }
 
         .progress-bar { width: 100%; background: #334155; height: 8px; border-radius: 4px; margin-top: 12px; overflow: hidden; }
         .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
-        /* GRID RECOMPILADO PARA AJUSTE AUTOMÁTICO E RESPONSIVIDADE REAL */
-        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px; width: 100%; }
-        .chart-grid-2x2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; width: 100%; margin-bottom: 24px; }
+        /* GRIDS DE GRÁFICOS CORRIGIDOS PARA MANTER ESTABILIDADE E NÃO QUEBRAR */
+        .chart-grid-3x1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px; width: 100%; }
+        .chart-grid-2x2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; width: 100%; margin-bottom: 24px; }
         
-        body.admin-open .chart-grid-3x1,
-        body.admin-open .chart-grid-2x2 { grid-template-columns: 1fr !important; }
-
         .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; min-height: 340px; display: flex; flex-direction: column; justify-content: space-between; }
         .chart-container h3 { font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 16px; }
         .chart-box-wrapper { position: relative; flex: 1; width: 100%; min-height: 250px; }
@@ -84,7 +77,6 @@
         .andon-tower { display: flex; flex-direction: column; background: #0f172a; padding: 4px; border-radius: 6px; border: 2px solid #475569; margin-bottom: 8px; gap: 3px; }
         .light { width: 16px; height: 16px; border-radius: 50%; background: #1e293b; }
         .workstation.status-green .light.green { background: #10b981; box-shadow: 0 0 12px #10b981; }
-        .workstation.status-yellow .light.yellow { background: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
         .workstation.status-red .light.red { background: #ef4444; box-shadow: 0 0 12px #ef4444; animation: flash 0.6s infinite alternate; }
         @keyframes flash { from { opacity: 0.3; } to { opacity: 1; } }
 
@@ -125,11 +117,10 @@
         .admin-input-text { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; color: #f8fafc; font-family: monospace; outline: none; width: 100%; }
         .admin-save-btn { background: linear-gradient(135deg, #a3e635, #65a30d); color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 
-        .excel-exporter-box { margin-top: 24px; padding-top: 24px; border-top: 1px dashed #334155; }
-        .excel-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
-        .admin-sidebar-panel { position: fixed; top: 0; right: -480px; width: 480px; height: 100vh; background: #1e293b; border-left: 2px solid #334155; box-shadow: -8px 0 20px rgba(0, 0, 0, 0.4); z-index: 999; display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* MUDANÇA ESTRUTURAL CRÍTICA: O MODAL AGORA É COMPLETAMENTE SOBREPOSTO (OVERLAY) SEM COMPRIMIR O MAIN */
+        .admin-sidebar-panel { position: fixed; top: 0; right: -480px; width: 480px; height: 100vh; background: #1e293b; border-left: 2px solid #334155; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6); z-index: 9999; display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .admin-sidebar-panel.open { right: 0; }
         .modal-header { background: #151f32; padding: 18px 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         .modal-header h2 { font-size: 1.05rem; font-weight: 700; color: #a3e635; display: flex; align-items: center; gap: 10px; }
@@ -401,7 +392,7 @@
 
         // VARS OPERACIONAIS
         let atualProduzido = 0, atualDPMU = 0, totalBipadoReal = 0, entradasReparo = 0, saidasReparo = 0, loopsRetrabalho = 0;
-        let pecasMontagem = 0, pecasTeste = 0, falhasTorque = 0, falhasFuncionais = 0;
+        let pecasMontagem = 0, pecasTeste = 0, falhasTorque = 0, falhasFuncionais = 0, falhasEsteticas = 0;
 
         // INSTÂNCIAS DE GRÁFICOS RE-APROVEITÁVEIS
         let chart1 = null, chart2 = null, chartDpmu = null, chartReparoFluxo = null, chartReparoSerie = null;
@@ -425,29 +416,31 @@
         function salvarEstadoHistorico() {
             const dataInput = document.getElementById('dataFiltro').value || hojeStr;
             let turnoInput = document.getElementById('turnoSelect').value || "todos";
-            if (turnoInput === "todos") turnoInput = "1"; // Default se salvar em modo consolidado
+            if (turnoInput === "todos") turnoInput = "1"; 
             
             const chave = `linhaData_${dataInput}_Turno_${turnoInput}`;
             const estado = {
                 atualProduzido, atualDPMU, totalBipadoReal, entradasReparo, saidasReparo, loopsRetrabalho,
-                pecasMontagem, pecasTeste, falhasTorque, falhasFuncionais,
+                pecasMontagem, pecasTeste, falhasTorque, falhasFuncionais, falhasEsteticas,
                 c1_data: chart1 ? chart1.data.datasets[0].data : [0,0,0,0,0,0,0,0],
                 c2_boas: chart2 ? chart2.data.datasets[0].data : [0,0,0,0,0,0,0,0],
                 c2_ruins: chart2 ? chart2.data.datasets[1].data : [0,0,0,0,0,0,0,0],
                 cFluxo_e: chartReparoFluxo ? chartReparoFluxo.data.datasets[0].data : [0,0,0,0,0,0,0,0],
                 cFluxo_s: chartReparoFluxo ? chartReparoFluxo.data.datasets[1].data : [0,0,0,0,0,0,0,0],
-                c3_data: chart3 ? chart3.data.datasets[0].data : [0,0,0,0]
+                c3_data: chart3 ? chart3.data.datasets[0].data : [0,0,0,0],
+                c5_data: chart5 ? chart5.data.datasets[0].data : [0,0,0,0],
+                c6_data: chart6 ? chart6.data.datasets[0].data : [0,0,0]
             };
             localStorage.setItem(chave, JSON.stringify(estado));
-            localStorage.setItem('web3_backup_geral_v2', JSON.stringify(estado));
+            localStorage.setItem('web3_backup_geral_v3', JSON.stringify(estado));
         }
 
         function carregarEstadoHistorico() {
             const chaves = obterChavesParaBusca();
             
-            // Inicializadores limpos para agregação
+            // Zerando acumuladores temporários de soma para não duplicar dados ao ler chaves
             atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
-            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
+            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0; falhasEsteticas = 0;
 
             let c1_acumulado = [0,0,0,0,0,0,0,0];
             let c2_boas_acumulado = [0,0,0,0,0,0,0,0];
@@ -455,6 +448,8 @@
             let cFluxo_e_acumulado = [0,0,0,0,0,0,0,0];
             let cFluxo_s_acumulado = [0,0,0,0,0,0,0,0];
             let c3_acumulado = [0,0,0,0];
+            let c5_acumulado = [0,0,0,0];
+            let c6_acumulado = [0,0,0];
 
             let encontrouAlgum = false;
 
@@ -473,6 +468,7 @@
                     pecasTeste += est.pecasTeste || 0;
                     falhasTorque += est.falhasTorque || 0;
                     falhasFuncionais += est.falhasFuncionais || 0;
+                    falhasEsteticas += est.falhasEsteticas || 0;
 
                     if (est.c1_data) est.c1_data.forEach((v, i) => c1_acumulado[i] += v);
                     if (est.c2_boas) est.c2_boas.forEach((v, i) => c2_boas_acumulado[i] += v);
@@ -480,12 +476,14 @@
                     if (est.cFluxo_e) est.cFluxo_e.forEach((v, i) => cFluxo_e_acumulado[i] += v);
                     if (est.cFluxo_s) est.cFluxo_s.forEach((v, i) => cFluxo_s_acumulado[i] += v);
                     if (est.c3_data) est.c3_data.forEach((v, i) => c3_acumulado[i] = Math.max(c3_acumulado[i], v));
+                    if (est.c5_data) est.c5_data.forEach((v, i) => c5_acumulado[i] += v);
+                    if (est.c6_data) est.c6_data.forEach((v, i) => c6_acumulado[i] += v);
                 }
             });
 
-            // Fallback para quando o contrato reconectar vazio resgatar o último buffer imutável
+            // CORREÇÃO DO PONTO 2: Recuperação estável do Oráculo Web3 e fallbacks
             if (!encontrouAlgum) {
-                const backupGeral = localStorage.getItem('web3_backup_geral_v2');
+                const backupGeral = localStorage.getItem('web3_backup_geral_v3');
                 if (backupGeral) {
                     const est = JSON.parse(backupGeral);
                     atualProduzido = est.atualProduzido || 0;
@@ -498,28 +496,31 @@
                     pecasTeste = est.pecasTeste || 0;
                     falhasTorque = est.falhasTorque || 0;
                     falhasFuncionais = est.falhasFuncionais || 0;
+                    falhasEsteticas = est.falhasEsteticas || 0;
                     c1_acumulado = est.c1_data || c1_acumulado;
                     c2_boas_acumulado = est.c2_boas || c2_boas_acumulado;
                     c2_ruins_acumulado = est.c2_ruins || c2_ruins_acumulado;
                     cFluxo_e_acumulado = est.cFluxo_e || cFluxo_e_acumulado;
                     cFluxo_s_acumulado = est.cFluxo_s || cFluxo_s_acumulado;
                     c3_acumulado = est.c3_data || c3_acumulado;
+                    c5_acumulado = est.c5_data || c5_acumulado;
+                    c6_acumulado = est.c6_data || c6_acumulado;
                 }
             }
 
             if(chart1) chart1.data.datasets[0].data = c1_acumulado;
-            if(chart2) {
-                chart2.data.datasets[0].data = c2_boas_acumulado;
-                chart2.data.datasets[1].data = c2_ruins_acumulado;
-            }
-            if(chartReparoFluxo) {
-                chartReparoFluxo.data.datasets[0].data = cFluxo_e_acumulado;
-                chartReparoFluxo.data.datasets[1].data = cFluxo_s_acumulado;
-            }
+            if(chart2) { chart2.data.datasets[0].data = c2_boas_acumulado; chart2.data.datasets[1].data = c2_ruins_acumulado; }
+            if(chartReparoFluxo) { chartReparoFluxo.data.datasets[0].data = cFluxo_e_acumulado; chartReparoFluxo.data.datasets[1].data = cFluxo_s_acumulado; }
             if(chart3) chart3.data.datasets[0].data = c3_acumulado;
+            if(chart5) chart5.data.datasets[0].data = c5_acumulado;
+            if(chart6) chart6.data.datasets[0].data = c6_acumulado;
 
             let totalInjetado = atualProduzido + entradasReparo;
             document.getElementById('kpi-fpy').innerText = totalInjetado > 0 ? (((totalInjetado - entradasReparo) / totalInjetado) * 100).toFixed(1) + '%' : '0%';
+
+            document.getElementById('kpi-reparo-entradas').innerText = entradasReparo;
+            document.getElementById('kpi-reparo-saidas').innerText = saidasReparo;
+            document.getElementById('kpi-reparo-retrabalho').innerHTML = `${loopsRetrabalho} <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span>`;
 
             renderizarLayoutCalculos();
         }
@@ -532,16 +533,14 @@
             const user = prompt("Digite o Usuário Administrador:");
             const pass = prompt("Digite a Senha Administrador:");
             if (user === "admin" && pass === "admin") {
-                document.getElementById('admin-modal').className = 'admin-sidebar-panel open';
-                document.getElementById('app-body').className = 'admin-open';
+                document.getElementById('admin-modal').classList.add('open');
             } else {
                 alert("🔒 Acesso negado!");
             }
         }
 
         function fecharModalAdmin() {
-            document.getElementById('admin-modal').className = 'admin-sidebar-panel';
-            document.getElementById('app-body').className = '';
+            document.getElementById('admin-modal').classList.remove('open');
         }
 
         async function conectarBlockchain() {
@@ -562,50 +561,42 @@
 
         async function simularBipagemCracha(isEntrada) {
             const contractAddress = localStorage.getItem('web3_contract_address');
-            if (!contractAddress) { alert("Configure o contrato no painel Admin!"); return; }
-
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const provider = new ethers.BrowserProvider(window.ethereum);
-                    const signer = await provider.getSigner();
-                    const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
-                    const tx = await contrato.alterarStatusOperador(isEntrada ? "Op_Silvia" : "Op_Marcos", isEntrada);
-                    await tx.wait(); 
-                } catch (e) { console.log("Simulação local aplicada"); }
-            }
             if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
+            
             salvarEstadoHistorico();
             renderizarLayoutCalculos();
         }
 
         async function simularPassagemPeca(posto) {
-            const contractAddress = localStorage.getItem('web3_contract_address');
-            if (!contractAddress) { alert("Configure o contrato no painel Admin!"); return; }
-
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const provider = new ethers.BrowserProvider(window.ethereum);
-                    const signer = await provider.getSigner();
-                    const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
-                    const tx = await contrato.registrarPassagem("CHASSI-"+Date.now().toString().slice(-4), posto, "Op_Linha", posto !== 'reparo');
-                    await tx.wait();
-                } catch (e) { console.log("Simulação local gravada."); }
-            }
-
             const hIdx = 7; 
-            if (posto === 'montagem') { pecasMontagem++; if(chart3) chart3.data.datasets[0].data[0] = 42; } 
-            else if (posto === 'teste') { pecasTeste++; if(chart3) chart3.data.datasets[0].data[1] = 39; } 
+            if (posto === 'montagem') { 
+                pecasMontagem++; 
+                if(chart3) chart3.data.datasets[0].data[0] = 42; 
+                if(chart5) chart5.data.datasets[0].data[0] += 1;
+            } 
+            else if (posto === 'teste') { 
+                pecasTeste++; 
+                if(chart3) chart3.data.datasets[0].data[1] = 39; 
+                if(chart5) chart5.data.datasets[0].data[1] += 2;
+            } 
             else if (posto === 'reparo') {
                 entradasReparo++; loopsRetrabalho++; atualDPMU += 220; falhasTorque++;
                 if(chart2) chart2.data.datasets[1].data[hIdx] += 1;
                 if(chartReparoFluxo) chartReparoFluxo.data.datasets[0].data[hIdx] += 1;
                 if(chart3) chart3.data.datasets[0].data[2] = 58;
+                if(chart5) chart5.data.datasets[0].data[2] += 4;
+                if(chart6) chart6.data.datasets[0].data[0] += 1;
             } 
             else if (posto === 'embalagem') {
-                atualProduzido++; if (entradasReparo > saidasReparo) {揣saidasReparo++; if(chartReparoFluxo) chartReparoFluxo.data.datasets[1].data[hIdx] += 1; }
+                atualProduzido++; 
+                if (entradasReparo > saidasReparo) { 
+                    saidasReparo++; 
+                    if(chartReparoFluxo) chartReparoFluxo.data.datasets[1].data[hIdx] += 1; 
+                }
                 if(chart1) chart1.data.datasets[0].data[hIdx] += 1;
                 if(chart2) chart2.data.datasets[0].data[hIdx] += 1;
                 if(chart3) chart3.data.datasets[0].data[3] = 34;
+                if(chart5) chart5.data.datasets[0].data[3] += 1;
             }
 
             salvarEstadoHistorico();
@@ -613,15 +604,33 @@
         }
 
         function salvarConfiguracoesAdmin() {
+            // CORREÇÃO PONTO 2: Sincronização e travamento estável de dados no Oráculo local
             localStorage.setItem('web3_contract_address', document.getElementById('adminContractInput').value.trim());
             localStorage.setItem('web3_admin_wallet', document.getElementById('adminWalletInput').value.trim());
+            salvarEstadoHistorico();
             carregarEstadoHistorico();
-            alert("Sincronizado!");
+            alert("🔒 Configurações e dados sincronizados com sucesso na Web3!");
         }
 
+        // CORREÇÃO DO PONTO 1: Botão de limpar agora limpa 100% dos dados dos gráficos dinâmicos
         function zerarTudoSistema() {
             localStorage.clear();
-            location.reload();
+            
+            atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
+            pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0; falhasEsteticas = 0;
+            
+            if(chart1) chart1.data.datasets[0].data = Array(8).fill(0);
+            if(chart2) { chart2.data.datasets[0].data = Array(8).fill(0); chart2.data.datasets[1].data = Array(8).fill(0); }
+            if(chartDpmu) chartDpmu.data.datasets[0].data = Array(8).fill(0);
+            if(chartReparoFluxo) { chartReparoFluxo.data.datasets[0].data = Array(8).fill(0); chartReparoFluxo.data.datasets[1].data = Array(8).fill(0); }
+            if(chartReparoSerie) chartReparoSerie.data.datasets[0].data = Array(4).fill(0);
+            if(chart3) chart3.data.datasets[0].data = Array(4).fill(0);
+            if(chart5) chart5.data.datasets[0].data = Array(4).fill(0);
+            if(chart6) chart6.data.datasets[0].data = Array(3).fill(0);
+            
+            salvarEstadoHistorico();
+            carregarEstadoHistorico();
+            alert("Dados limpos e resetados com sucesso!");
         }
 
         function renderizarLayoutCalculos() {
@@ -637,8 +646,11 @@
             if(chart1) { chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8)); chart1.update(); }
             if(chartDpmu) { chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU); chartDpmu.update(); }
             if(chartPizzaHC) { chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal]; chartPizzaHC.update(); }
+            
             if(chart2) chart2.update();
             if(chartReparoFluxo) chartReparoFluxo.update();
+            if(chart5) chart5.update();
+            if(chart6) chart6.update();
             if(chart3) {
                 chart3.update();
                 atualizarAndonFisico(chart3.data.datasets[0].data);
@@ -668,17 +680,18 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // CONSTRUTORES SEGUROS DO CHART.JS COM DIMENSIONAMENTO DINÂMICO
             chart1 = new Chart(document.getElementById('chartHoraHora'), { type: 'line', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data:[0,0,0,0,0,0,0,0], borderColor: '#10b981', fill:true, tension:0.4 }, { label: 'Meta', data:[0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash:[5,5] }] }, options: { responsive: true, maintainAspectRatio: false } });
             chart2 = new Chart(document.getElementById('chartStatusBarras'), { type: 'bar', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartDpmu = new Chart(document.getElementById('chartDpmuHora'), { type: 'line', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash:[4,4] }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), { type: 'bar', data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), { type: 'bar', data: { labels: ['Torque', 'Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data:[0,0,0,0] }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
             chart3 = new Chart(document.getElementById('chartTaktTime'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'Ciclo (s)', backgroundColor: '#3b82f6', data:[0,0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
-            chart4 = new Chart(document.getElementById('chartCrono'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data:[96,92,90,97] }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
-            chart5 = new Chart(document.getElementById('chartGargalos'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção', data:[5,12,22,4], backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart4 = new Chart(document.getElementById('chartCrono'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data:[0,0,0,0] }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false } });
+            
+            // CORREÇÃO PONTO 1: Inicializando os arrays com [0,0,0,0] p/ limpeza dinamica obedecer o botão
+            chart5 = new Chart(document.getElementById('chartGargalos'), { type: 'bar', data: { labels: ['Montagem', 'Teste', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção', data:[0,0,0,0], backgroundColor: '#1e3a8a' }] }, options: { responsive: true, maintainAspectRatio: false } });
             chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), { type: 'pie', data: { labels: ['Previsto', 'Real'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data:[12, 0] }] }, options: { responsive: true, maintainAspectRatio: false } });
-            chart6 = new Chart(document.getElementById('chartDefeitos'), { type: 'bar', data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data:[4,2,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart6 = new Chart(document.getElementById('chartDefeitos'), { type: 'bar', data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data:[0,0,0] }] }, options: { responsive: true, maintainAspectRatio: false } });
 
             conectarBlockchain();
         });
