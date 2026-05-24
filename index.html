@@ -60,11 +60,9 @@
         .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
-        /* GRIDS DE GRÁFICOS DINÂMICOS E RESPONSIVOS CORRIGIDOS */
         .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; transition: all 0.3s ease; }
         .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; transition: all 0.3s ease; }
         
-        /* ADAPTAÇÃO TOTAL QUANDO O PAINEL ADMIN ABRE */
         body.admin-open .chart-grid-3x1,
         body.admin-open .chart-grid-2x2 {
             grid-template-columns: 1fr !important;
@@ -154,7 +152,6 @@
         .excel-inputs-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
-        /* PAINEL ADMIN LATERAL FLUTUANTE */
         .admin-sidebar-panel { 
             position: fixed; 
             top: 0; 
@@ -169,9 +166,7 @@
             flex-direction: column; 
             transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .admin-sidebar-panel.open {
-            right: 0; 
-        }
+        .admin-sidebar-panel.open { right: 0; }
         .modal-header { background: #151f32; padding: 18px 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         .modal-header h2 { font-size: 1.05rem; font-weight: 700; color: #a3e635; display: flex; align-items: center; gap: 10px; }
         .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
@@ -212,7 +207,7 @@
             <div class="filters-group">
                 <div class="filter-container" id="filtroDataUnica">
                     <i class="fa-regular fa-calendar" style="color: #10b981;"></i>
-                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input" onchange="alterouDataOuTurno()"></div>
+                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input" oninput="alterouDataOuTurno()"></div>
                 </div>
 
                 <div class="filter-container" id="filtroTurno">
@@ -464,6 +459,7 @@
     <script>
         Chart.register(ChartDataLabels);
         
+        // Definição da data inicial de hoje sem travar inputs futuros
         const hojeStr = new Date().toISOString().split('T')[0];
         document.getElementById('dataFiltro').value = hojeStr;
         document.getElementById('excelDataInicio').value = hojeStr;
@@ -500,9 +496,9 @@
         ];
 
         function obterChaveFiltro() {
-            const data = document.getElementById('dataFiltro').value;
-            const turno = document.getElementById('turnoSelect').value;
-            return `linhaData_${data}_Turno_${turno}`;
+            const dataInput = document.getElementById('dataFiltro').value || hojeStr;
+            const turnoInput = document.getElementById('turnoSelect').value || "1";
+            return `linhaData_${dataInput}_Turno_${turnoInput}`;
         }
 
         function salvarEstadoHistorico() {
@@ -538,26 +534,33 @@
                 falhasTorque = estado.falhasTorque || 0;
                 falhasFuncionais = estado.falhasFuncionais || 0;
 
-                chart1.data.datasets[0].data = estado.c1_data || [0,0,0,0,0,0,0,0];
-                chart2.data.datasets[0].data = estado.c2_data_boas || [0,0,0,0,0,0,0,0];
-                chart2.data.datasets[1].data = estado.c2_data_ruins || [0,0,0,0,0,0,0,0];
-                chartReparoFluxo.data.datasets[0].data = estado.cFluxo_e || [0,0,0,0,0,0,0,0];
-                chartReparoFluxo.data.datasets[1].data = estado.cFluxo_s || [0,0,0,0,0,0,0,0];
-                chart3.data.datasets[0].data = estado.c3_data || [0,0,0,0];
+                if(chart1) chart1.data.datasets[0].data = estado.c1_data || [0,0,0,0,0,0,0,0];
+                if(chart2) {
+                    chart2.data.datasets[0].data = estado.c2_data_boas || [0,0,0,0,0,0,0,0];
+                    chart2.data.datasets[1].data = estado.c2_data_ruins || [0,0,0,0,0,0,0,0];
+                }
+                if(chartReparoFluxo) {
+                    chartReparoFluxo.data.datasets[0].data = estado.cFluxo_e || [0,0,0,0,0,0,0,0];
+                    chartReparoFluxo.data.datasets[1].data = estado.cFluxo_s || [0,0,0,0,0,0,0,0];
+                }
+                if(chart3) chart3.data.datasets[0].data = estado.c3_data || [0,0,0,0];
             } else {
                 atualProduzido = 0; atualDPMU = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
                 pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
                 
-                // Mantém o operador logado na carteira se for o mesmo dia
                 const hcGeral = localStorage.getItem('ultimo_hc_bipado');
                 totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
 
-                chart1.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                chart2.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                chart2.data.datasets[1].data = [0,0,0,0,0,0,0,0];
-                chartReparoFluxo.data.datasets[0].data = [0,0,0,0,0,0,0,0];
-                chartReparoFluxo.data.datasets[1].data = [0,0,0,0,0,0,0,0];
-                chart3.data.datasets[0].data = [0,0,0,0];
+                if(chart1) chart1.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                if(chart2) {
+                    chart2.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                    chart2.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+                }
+                if(chartReparoFluxo) {
+                    chartReparoFluxo.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                    chartReparoFluxo.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+                }
+                if(chart3) chart3.data.datasets[0].data = [0,0,0,0];
             }
 
             let totalInjetado = atualProduzido + entradasReparo;
@@ -572,7 +575,10 @@
         }
 
         function alterouDataOuTurno() {
-            carregarEstadoHistorico();
+            // Isolamento para não bloquear a digitação/seleção nativa do input
+            setTimeout(() => {
+                carregarEstadoHistorico();
+            }, 10);
         }
 
         function gerarNovoChassi() {
@@ -601,6 +607,12 @@
             if (typeof window.ethereum !== 'undefined') {
                 document.getElementById('blockchain-status-text').innerText = "MetaMask Pronta (Sepolia)";
                 document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
+                
+                // Puxa o último balanceamento de HC memorizado localmente vinculado à sessão do contrato
+                const hcGeral = localStorage.getItem('ultimo_hc_bipado');
+                if (hcGeral) {
+                    totalBipadoReal = parseInt(hcGeral);
+                }
                 carregarEstadoHistorico();
             } else {
                 document.getElementById('blockchain-status-text').innerText = "Sem MetaMask (Modo Local)";
@@ -731,12 +743,11 @@
             localStorage.setItem('web3_contract_address', rawContract);
             localStorage.setItem('web3_admin_wallet', rawWallet);
             
-            // Força a leitura do contador mantido na blockchain/localstorage
             const hcGeral = localStorage.getItem('ultimo_hc_bipado');
             totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
             
-            renderizarLayoutCalculos();
-            alert("⚙️ Diretrizes Web3 sincronizadas com sucesso!");
+            carregarEstadoHistorico();
+            alert("⚙️ Diretrizes Web3 sincronizadas com sucesso! Os dados foram vinculados.");
         }
 
         function zerarTudoSistema() {
@@ -789,49 +800,58 @@
             document.getElementById('kpi-operadores-status').innerHTML = totalBipadoReal === 0 ? "Aguardando login" : 
                 (totalBipadoReal === hcPrevistoIT ? `<i class="fa-solid fa-circle-check"></i> Alocação Ideal` : `<i class="fa-solid fa-triangle-exclamation"></i> Desbalanceado`);
 
-            document.getElementById('kpi-reparo-entradas').innerText = entradasReparo;
-            document.getElementById('kpi-reparo-saidas').innerText = saidasReparo;
-            document.getElementById('kpi-reparo-retrabalho').innerHTML = `${loopsRetrabalho} <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span>`;
+            if (document.getElementById('kpi-reparo-entradas')) document.getElementById('kpi-reparo-entradas').innerText = entradasReparo;
+            if (document.getElementById('kpi-reparo-saidas')) document.getElementById('kpi-reparo-saidas').innerText = saidasReparo;
+            if (document.getElementById('kpi-reparo-retrabalho')) document.getElementById('kpi-reparo-retrabalho').innerHTML = `${loopsRetrabalho} <span style="font-size:0.75rem;font-weight:400;color:#94a3b8">Loops</span>`;
 
-            chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8));
-            chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU);
+            if(chart1) chart1.data.datasets[1].data = Array(8).fill(Math.round(targetMeta / 8));
+            if(chartDpmu) chartDpmu.data.datasets[1].data = Array(8).fill(limitDPMU);
             
             let dAccum = 0;
-            chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
+            if(chartDpmu && chart2) {
+                chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
+            }
 
-            // ATUALIZAÇÃO DO GRÁFICO DE PIZZA DE OPERADORES (HC)
             if(chartPizzaHC) {
                 chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
             }
 
-            // ATUALIZAÇÃO DO GRÁFICO DE GARGALOS (Retenção em min e Fila de peças)
-            if(chart5) {
+            if(chart5 && chart3) {
                 let tempoMontagem = chart3.data.datasets[0].data[0] || 0;
                 let tempoTeste = chart3.data.datasets[0].data[1] || 0;
                 let tempoReparo = chart3.data.datasets[0].data[2] || 0;
                 let tempoEmbalagem = chart3.data.datasets[0].data[3] || 0;
 
-                // Transforma segundos de ciclo em minutos fictícios de retenção para o gráfico
                 chart5.data.datasets[0].data = [
                     tempoMontagem > 0 ? (tempoMontagem * 0.4).toFixed(1) : 0,
                     tempoTeste > 0 ? (tempoTeste * 0.5).toFixed(1) : 0,
                     tempoReparo > 0 ? (tempoReparo * 0.3).toFixed(1) : 0,
                     tempoEmbalagem > 0 ? (tempoEmbalagem * 0.2).toFixed(1) : 0
                 ];
-                // Injeta as filas acumuladas baseadas nas passagens
                 chart5.data.datasets[1].data = [pecasMontagem, pecasTeste, entradasReparo, atualProduzido];
             }
 
-            chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
-            chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
-            chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
+            if(chartReparoSerie) chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
+            if(chart6) chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
+            if(chart4) chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
             
-            atualizarAndonFisico(
-                [chart3.data.datasets[0].data[0], chart3.data.datasets[0].data[1], chart3.data.datasets[0].data[2], chart3.data.datasets[0].data[3]],
-                [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
-            );
+            if(chart3 && chart4) {
+                atualizarAndonFisico(
+                    [chart3.data.datasets[0].data[0], chart3.data.datasets[0].data[1], chart3.data.datasets[0].data[2], chart3.data.datasets[0].data[3]],
+                    [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
+                );
+            }
 
-            chart1.update(); chart2.update(); chartDpmu.update(); chartReparoFluxo.update(); chartReparoSerie.update(); chart3.update(); chart4.update(); chart5.update(); chart6.update(); if(chartPizzaHC) chartPizzaHC.update();
+            if(chart1) chart1.update(); 
+            if(chart2) chart2.update(); 
+            if(chartDpmu) chartDpmu.update(); 
+            if(chartReparoFluxo) chartReparoFluxo.update(); 
+            if(chartReparoSerie) chartReparoSerie.update(); 
+            if(chart3) chart3.update(); 
+            if(chart4) chart4.update(); 
+            if(chart5) chart5.update(); 
+            if(chart6) chart6.update(); 
+            if(chartPizzaHC) chartPizzaHC.update();
         }
 
         function atualizarAndonFisico(tempos, eficiencias) {
@@ -883,67 +903,68 @@
         const gridStyle = { color: '#334155', drawBorder: false };
         const ticksStyle = { color: '#94a3b8' };
 
-        chart1 = new Chart(document.getElementById('chartHoraHora'), {
-            type: 'line',
-            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data: [0,0,0,0,0,0,0,0], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.05)', fill: true, tension: 0.4 }, { label: 'Meta Hora', data: [0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash: [5, 5], fill: false }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
-        });
-
-        chart2 = new Chart(document.getElementById('chartStatusBarras'), {
-            type: 'bar',
-            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } }, datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 20, ticks: ticksStyle } } }
-        });
-
-        chartDpmu = new Chart(document.getElementById('chartDpmuHora'), {
-            type: 'line',
-            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', tension: 0.2, data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash: [4, 4], pointRadius: 0, data:[0,0,0,0,0,0,0,0] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
-        });
-
-        chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), {
-            type: 'bar',
-            data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 15, ticks: ticksStyle } } }
-        });
-
-        chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), {
-            type: 'bar',
-            data: { labels: ['Falha Torque', 'Falha Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data: [0,0,0,0] }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, align: 'right', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, stepSize: 1, max: 15, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
-        });
-
-        chart3 = new Chart(document.getElementById('chartTaktTime'), {
-            type: 'bar',
-            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Tempo Ciclo (s)', backgroundColor: '#3b82f6', data: [0,0,0,0] }, { label: 'Takt Time Alvo', data: [45, 45, 45, 45], type: 'line', borderColor: '#f59e0b', borderWidth: 2 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: (c) => c.dataset.type !== 'line', anchor: 'end', align: 'top', color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 80, ticks: ticksStyle } } }
-        });
-
-        chart4 = new Chart(document.getElementById('chartCrono'), {
-            type: 'bar',
-            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data: [0,0,0,0] }, { label: 'Meta (95%)', data: [95, 95, 95, 95], type: 'line', borderColor: '#10b981', borderDash: [4, 4], pointRadius: 0 }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + '%', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, max: 110, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
-        });
-
-        chart5 = new Chart(document.getElementById('chartGargalos'), {
-            type: 'bar',
-            data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção (min)', yAxisID: 'y', data:[0,0,0,0], backgroundColor: '#1e3a8a' }, { label: 'Fila (un)', type: 'line', borderColor: '#38bdf8', yAxisID: 'y1', data:[0,0,0,0] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, font: { size: 9 }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { type: 'linear', position: 'left', max: 30, ticks: ticksStyle }, y1: { type: 'linear', position: 'right', max: 35, grid: { display: false }, ticks: ticksStyle } } }
-        });
-
-        chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), {
-            type: 'pie',
-            data: { labels: ['HC Previsto', 'HC Real Bipado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [12, 0] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + ' HC', color: '#fff', font: { weight: 'bold' } } } }
-        });
-
-        chart6 = new Chart(document.getElementById('chartDefeitos'), {
-            type: 'bar',
-            data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data: [0,0,0] }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { max: 15, ticks: ticksStyle } } }
-        });
-
+        // INSTANCIAÇÃO SEGURA DOS ELEMENTOS GRÁFICOS
         window.addEventListener('DOMContentLoaded', () => {
+            chart1 = new Chart(document.getElementById('chartHoraHora'), {
+                type: 'line',
+                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Realizado', data: [0,0,0,0,0,0,0,0], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.05)', fill: true, tension: 0.4 }, { label: 'Meta Hora', data: [0,0,0,0,0,0,0,0], borderColor: '#ef4444', borderDash: [5, 5], fill: false }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
+            });
+
+            chart2 = new Chart(document.getElementById('chartStatusBarras'), {
+                type: 'bar',
+                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Boas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }, { label: 'Ruins', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } }, datalabels: { display: true, anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 20, ticks: ticksStyle } } }
+            });
+
+            chartDpmu = new Chart(document.getElementById('chartDpmuHora'), {
+                type: 'line',
+                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'DPMU', borderColor: '#f59e0b', tension: 0.2, data:[0,0,0,0,0,0,0,0] }, { label: 'Limite', borderColor: '#ef4444', borderDash: [4, 4], pointRadius: 0, data:[0,0,0,0,0,0,0,0] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, ticks: ticksStyle } } }
+            });
+
+            chartReparoFluxo = new Chart(document.getElementById('chartFluxoReparo'), {
+                type: 'bar',
+                data: { labels: ['1ªH', '2ªH', '3ªH', '4ªH', '5ªH', '6ªH', '7ªH', '8ªH'], datasets: [{ label: 'Entradas', backgroundColor: '#ef4444', data:[0,0,0,0,0,0,0,0] }, { label: 'Saídas', backgroundColor: '#10b981', data:[0,0,0,0,0,0,0,0] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 15, ticks: ticksStyle } } }
+            });
+
+            chartReparoSerie = new Chart(document.getElementById('chartRetrabalhoSerie'), {
+                type: 'bar',
+                data: { labels: ['Falha Torque', 'Falha Funcional', 'Estético', 'Firmware'], datasets: [{ label: 'Loops', backgroundColor: '#f59e0b', data: [0,0,0,0] }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, align: 'right', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, stepSize: 1, max: 15, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
+            });
+
+            chart3 = new Chart(document.getElementById('chartTaktTime'), {
+                type: 'bar',
+                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Tempo Ciclo (s)', backgroundColor: '#3b82f6', data: [0,0,0,0] }, { label: 'Takt Time Alvo', data: [45, 45, 45, 45], type: 'line', borderColor: '#f59e0b', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: (c) => c.dataset.type !== 'line', anchor: 'end', align: 'top', color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { grid: gridStyle, max: 80, ticks: ticksStyle } } }
+            });
+
+            chart4 = new Chart(document.getElementById('chartCrono'), {
+                type: 'bar',
+                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'VA (%)', backgroundColor: '#8b5cf6', data: [0,0,0,0] }, { label: 'Meta (95%)', data: [95, 95, 95, 95], type: 'line', borderColor: '#10b981', borderDash: [4, 4], pointRadius: 0 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + '%', color: '#f8fafc' } }, scales: { x: { grid: gridStyle, max: 110, ticks: ticksStyle }, y: { grid: { display: false }, ticks: ticksStyle } } }
+            });
+
+            chart5 = new Chart(document.getElementById('chartGargalos'), {
+                type: 'bar',
+                data: { labels: ['Montagem', 'Teste Funcional', 'Reparo', 'Embalagem'], datasets: [{ label: 'Retenção (min)', yAxisID: 'y', data:[0,0,0,0], backgroundColor: '#1e3a8a' }, { label: 'Fila (un)', type: 'line', borderColor: '#38bdf8', yAxisID: 'y1', data:[0,0,0,0] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: true, font: { size: 9 }, color: '#f8fafc' } }, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { type: 'linear', position: 'left', max: 30, ticks: ticksStyle }, y1: { type: 'linear', position: 'right', max: 35, grid: { display: false }, ticks: ticksStyle } } }
+            });
+
+            chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), {
+                type: 'pie',
+                data: { labels: ['HC Previsto', 'HC Real Bipado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [12, 0] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + ' HC', color: '#fff', font: { weight: 'bold' } } } }
+            });
+
+            chart6 = new Chart(document.getElementById('chartDefeitos'), {
+                type: 'bar',
+                data: { labels: ['Posto Teste', 'Posto Montagem', 'Posto Embalagem'], datasets: [{ label: 'Ocorrências', backgroundColor: '#475569', data: [0,0,0] }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false }, ticks: ticksStyle }, y: { max: 15, ticks: ticksStyle } } }
+            });
+
             conectarBlockchain();
         });
     </script>
