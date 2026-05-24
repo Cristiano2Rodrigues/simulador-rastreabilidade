@@ -41,7 +41,6 @@
         .filter-container label { font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 2px; letter-spacing: 0.5px; }
         .filter-select, .filter-input { border: none; background: transparent; font-size: 0.875rem; font-weight: 700; color: #f8fafc; cursor: pointer; outline: none; }
         .filter-select option { background-color: #1e293b; color: #f8fafc; }
-        .filter-input[type="number"] { width: 65px; border-bottom: 1px dashed #10b981; text-align: center; }
 
         .tab-content { display: none; position: relative; z-index: 5; width: 100%; }
         .tab-content.active { display: block; }
@@ -61,12 +60,13 @@
         .progress-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.5s ease; }
         .card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; }
 
-        /* GRIDS DE GRÁFICOS DINÂMICOS E RESPONSIVOS */
+        /* GRIDS DE GRÁFICOS DINÂMICOS E RESPONSIVOS CORRIGIDOS */
         .chart-grid-3x1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; width: 100%; transition: all 0.3s ease; }
-        .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; }
+        .chart-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin-bottom: 24px; transition: all 0.3s ease; }
         
-        /* CORREÇÃO VISUAL DEFINITIVA: Quando o painel admin abre, a linha de 3 colunas vira 1 coluna larga e confortável verticalmente */
-        body.admin-open .chart-grid-3x1 {
+        /* ADAPTAÇÃO TOTAL QUANDO O PAINEL ADMIN ABRE */
+        body.admin-open .chart-grid-3x1,
+        body.admin-open .chart-grid-2x2 {
             grid-template-columns: 1fr !important;
         }
         body.admin-open .chart-grid-3x1 > :last-child {
@@ -74,13 +74,12 @@
         }
 
         @media(max-width: 1400px) { 
-            .chart-grid-3x1 { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid-3x1, .chart-grid-2x2 { grid-template-columns: repeat(2, 1fr); }
             .chart-grid-3x1 > :last-child { grid-column: span 2; }
         }
         @media(max-width: 1024px) { 
-            .chart-grid-3x1 { grid-template-columns: 1fr !important; }
+            .chart-grid-3x1, .chart-grid-2x2 { grid-template-columns: 1fr !important; }
             .chart-grid-3x1 > :last-child { grid-column: span 1 !important; }
-            .chart-grid-2x2 { grid-template-columns: 1fr; } 
         }
         
         .chart-container { background: #1e293b; padding: 24px; border-radius: 12px; border: 1px solid #334155; min-height: 340px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
@@ -213,14 +212,14 @@
             <div class="filters-group">
                 <div class="filter-container" id="filtroDataUnica">
                     <i class="fa-regular fa-calendar" style="color: #10b981;"></i>
-                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input"></div>
+                    <div><label>Data</label><input type="date" id="dataFiltro" class="filter-input" onchange="alterouDataOuTurno()"></div>
                 </div>
 
                 <div class="filter-container" id="filtroTurno">
                     <i class="fa-regular fa-clock" style="color: #10b981;"></i>
                     <div>
                         <label>Turno</label>
-                        <select id="turnoSelect" class="filter-select">
+                        <select id="turnoSelect" class="filter-select" onchange="alterouDataOuTurno()">
                             <option value="1" selected>Turno 1</option>
                             <option value="2">Turno 2</option>
                         </select>
@@ -500,6 +499,82 @@
             "function consultarHistorico(string memory _chassi) public view returns (tuple(string posto, uint256 timestamp, string operador, bool statusSucesso)[])"
         ];
 
+        function obterChaveFiltro() {
+            const data = document.getElementById('dataFiltro').value;
+            const turno = document.getElementById('turnoSelect').value;
+            return `linhaData_${data}_Turno_${turno}`;
+        }
+
+        function salvarEstadoHistorico() {
+            const chave = obterChaveFiltro();
+            const estado = {
+                atualProduzido, atualDPMU, totalBipadoReal, entradasReparo, saidasReparo, loopsRetrabalho,
+                pecasMontagem, pecasTeste, falhasTorque, falhasFuncionais,
+                c1_data: chart1.data.datasets[0].data,
+                c2_data_boas: chart2.data.datasets[0].data,
+                c2_data_ruins: chart2.data.datasets[1].data,
+                cFluxo_e: chartReparoFluxo.data.datasets[0].data,
+                cFluxo_s: chartReparoFluxo.data.datasets[1].data,
+                c3_data: chart3.data.datasets[0].data
+            };
+            localStorage.setItem(chave, JSON.stringify(estado));
+            localStorage.setItem('ultimo_hc_bipado', totalBipadoReal); 
+        }
+
+        function carregarEstadoHistorico() {
+            const chave = obterChaveFiltro();
+            const cache = localStorage.getItem(chave);
+            
+            if (cache) {
+                const estado = JSON.parse(cache);
+                atualProduzido = estado.atualProduzido || 0;
+                atualDPMU = estado.atualDPMU || 0;
+                totalBipadoReal = estado.totalBipadoReal || 0;
+                entradasReparo = estado.entradasReparo || 0;
+                saidasReparo = estado.saidasReparo || 0;
+                loopsRetrabalho = estado.loopsRetrabalho || 0;
+                pecasMontagem = estado.pecasMontagem || 0;
+                pecasTeste = estado.pecasTeste || 0;
+                falhasTorque = estado.falhasTorque || 0;
+                falhasFuncionais = estado.falhasFuncionais || 0;
+
+                chart1.data.datasets[0].data = estado.c1_data || [0,0,0,0,0,0,0,0];
+                chart2.data.datasets[0].data = estado.c2_data_boas || [0,0,0,0,0,0,0,0];
+                chart2.data.datasets[1].data = estado.c2_data_ruins || [0,0,0,0,0,0,0,0];
+                chartReparoFluxo.data.datasets[0].data = estado.cFluxo_e || [0,0,0,0,0,0,0,0];
+                chartReparoFluxo.data.datasets[1].data = estado.cFluxo_s || [0,0,0,0,0,0,0,0];
+                chart3.data.datasets[0].data = estado.c3_data || [0,0,0,0];
+            } else {
+                atualProduzido = 0; atualDPMU = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
+                pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
+                
+                // Mantém o operador logado na carteira se for o mesmo dia
+                const hcGeral = localStorage.getItem('ultimo_hc_bipado');
+                totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
+
+                chart1.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                chart2.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                chart2.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+                chartReparoFluxo.data.datasets[0].data = [0,0,0,0,0,0,0,0];
+                chartReparoFluxo.data.datasets[1].data = [0,0,0,0,0,0,0,0];
+                chart3.data.datasets[0].data = [0,0,0,0];
+            }
+
+            let totalInjetado = atualProduzido + entradasReparo;
+            if (totalInjetado > 0) {
+                let recalculadoFPY = ((totalInjetado - entradasReparo) / totalInjetado) * 100;
+                document.getElementById('kpi-fpy').innerText = recalculadoFPY.toFixed(1) + '%';
+            } else {
+                document.getElementById('kpi-fpy').innerText = '0%';
+            }
+
+            renderizarLayoutCalculos();
+        }
+
+        function alterouDataOuTurno() {
+            carregarEstadoHistorico();
+        }
+
         function gerarNovoChassi() {
             return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
         }
@@ -526,9 +601,11 @@
             if (typeof window.ethereum !== 'undefined') {
                 document.getElementById('blockchain-status-text').innerText = "MetaMask Pronta (Sepolia)";
                 document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
+                carregarEstadoHistorico();
             } else {
                 document.getElementById('blockchain-status-text').innerText = "Sem MetaMask (Modo Local)";
                 document.getElementById('blockchain-dot').style.backgroundColor = "#64748b";
+                carregarEstadoHistorico();
             }
         }
 
@@ -556,6 +633,8 @@
                     await tx.wait(); 
 
                     if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
+                    
+                    salvarEstadoHistorico();
                     renderizarLayoutCalculos();
                     
                     document.getElementById('blockchain-status-text').innerText = "Sincronizado via Web3";
@@ -565,7 +644,6 @@
                     console.error(error);
                     document.getElementById('blockchain-status-text').innerText = "Erro na Transação";
                     document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
-                    alert("Transação rejeitada na carteira ou falhou.");
                 }
             }
         }
@@ -592,9 +670,7 @@
                     const nomeOperador = "Op_Linha";
                     
                     let statusSucesso = true;
-                    if (posto === 'reparo') {
-                        statusSucesso = false;
-                    }
+                    if (posto === 'reparo') statusSucesso = false;
 
                     const tx = await contrato.registrarPassagem(chassiAleatorio, nomePosto, nomeOperador, statusSucesso);
                     document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
@@ -604,11 +680,11 @@
 
                     if (posto === 'montagem') {
                         pecasMontagem++;
-                        chart3.data.datasets[0].data[0] = Math.floor(Math.random() * 10) + 38;
+                        chart3.data.datasets[0].data[0] = Math.floor(Math.random() * 5) + 42; 
                     } 
                     else if (posto === 'teste') {
                         pecasTeste++;
-                        chart3.data.datasets[0].data[1] = Math.floor(Math.random() * 10) + 40;
+                        chart3.data.datasets[0].data[1] = Math.floor(Math.random() * 5) + 38;
                     } 
                     else if (posto === 'reparo') {
                         entradasReparo++;
@@ -617,7 +693,7 @@
                         if (entradasReparo % 2 === 0) { falhasTorque++; } else { falhasFuncionais++; }
                         chart2.data.datasets[1].data[horaIndex] += 1;
                         chartReparoFluxo.data.datasets[0].data[horaIndex] += 1;
-                        chart3.data.datasets[0].data[2] = Math.floor(Math.random() * 12) + 25;
+                        chart3.data.datasets[0].data[2] = Math.floor(Math.random() * 10) + 55; 
                     } 
                     else if (posto === 'embalagem') {
                         atualProduzido++;
@@ -627,7 +703,7 @@
                         }
                         chart1.data.datasets[0].data[horaIndex] += 1;
                         chart2.data.datasets[0].data[horaIndex] += 1;
-                        chart3.data.datasets[0].data[3] = Math.floor(Math.random() * 8) + 35;
+                        chart3.data.datasets[0].data[3] = Math.floor(Math.random() * 5) + 35;
                     }
 
                     let totalInjetado = atualProduzido + entradasReparo;
@@ -636,6 +712,7 @@
                         document.getElementById('kpi-fpy').innerText = recalculadoFPY.toFixed(1) + '%';
                     }
 
+                    salvarEstadoHistorico();
                     renderizarLayoutCalculos();
                     document.getElementById('blockchain-status-text').innerText = "Dados Gravados!";
                     document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
@@ -653,10 +730,20 @@
             const rawWallet = document.getElementById('adminWalletInput').value.trim();
             localStorage.setItem('web3_contract_address', rawContract);
             localStorage.setItem('web3_admin_wallet', rawWallet);
-            alert("⚙️ Diretrizes Web3 sincronizadas localmente!");
+            
+            // Força a leitura do contador mantido na blockchain/localstorage
+            const hcGeral = localStorage.getItem('ultimo_hc_bipado');
+            totalBipadoReal = hcGeral ? parseInt(hcGeral) : 0;
+            
+            renderizarLayoutCalculos();
+            alert("⚙️ Diretrizes Web3 sincronizadas com sucesso!");
         }
 
         function zerarTudoSistema() {
+            const chave = obterChaveFiltro();
+            localStorage.removeItem(chave);
+            localStorage.setItem('ultimo_hc_bipado', 0);
+
             atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
             pecasMontagem = 0; pecasTeste = 0; falhasTorque = 0; falhasFuncionais = 0;
             document.getElementById('kpi-fpy').innerText = '0%';
@@ -712,7 +799,29 @@
             let dAccum = 0;
             chartDpmu.data.datasets[0].data = chart2.data.datasets[1].data.map(n => { dAccum += n * 250; return dAccum; });
 
-            if(chartPizzaHC) chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
+            // ATUALIZAÇÃO DO GRÁFICO DE PIZZA DE OPERADORES (HC)
+            if(chartPizzaHC) {
+                chartPizzaHC.data.datasets[0].data = [hcPrevistoIT, totalBipadoReal];
+            }
+
+            // ATUALIZAÇÃO DO GRÁFICO DE GARGALOS (Retenção em min e Fila de peças)
+            if(chart5) {
+                let tempoMontagem = chart3.data.datasets[0].data[0] || 0;
+                let tempoTeste = chart3.data.datasets[0].data[1] || 0;
+                let tempoReparo = chart3.data.datasets[0].data[2] || 0;
+                let tempoEmbalagem = chart3.data.datasets[0].data[3] || 0;
+
+                // Transforma segundos de ciclo em minutos fictícios de retenção para o gráfico
+                chart5.data.datasets[0].data = [
+                    tempoMontagem > 0 ? (tempoMontagem * 0.4).toFixed(1) : 0,
+                    tempoTeste > 0 ? (tempoTeste * 0.5).toFixed(1) : 0,
+                    tempoReparo > 0 ? (tempoReparo * 0.3).toFixed(1) : 0,
+                    tempoEmbalagem > 0 ? (tempoEmbalagem * 0.2).toFixed(1) : 0
+                ];
+                // Injeta as filas acumuladas baseadas nas passagens
+                chart5.data.datasets[1].data = [pecasMontagem, pecasTeste, entradasReparo, atualProduzido];
+            }
+
             chartReparoSerie.data.datasets[0].data = [falhasTorque, falhasFuncionais, 0, 0];
             chart6.data.datasets[0].data = [falhasFuncionais, falhasTorque, 0];
             chart4.data.datasets[0].data = [ pecasMontagem > 0 ? 96 : 0, pecasTeste > 0 ? 92 : 0, entradasReparo > 0 ? 90 : 0, atualProduzido > 0 ? 97 : 0 ];
@@ -722,7 +831,7 @@
                 [chart4.data.datasets[0].data[0], chart4.data.datasets[0].data[1], chart4.data.datasets[0].data[2], chart4.data.datasets[0].data[3]]
             );
 
-            chart1.update(); chart2.update(); chartDpmu.update(); chartReparoFluxo.update(); chartReparoSerie.update(); chart3.update(); chart4.update(); chart6.update(); if(chartPizzaHC) chartPizzaHC.update();
+            chart1.update(); chart2.update(); chartDpmu.update(); chartReparoFluxo.update(); chartReparoSerie.update(); chart3.update(); chart4.update(); chart5.update(); chart6.update(); if(chartPizzaHC) chartPizzaHC.update();
         }
 
         function atualizarAndonFisico(tempos, eficiencias) {
@@ -824,7 +933,7 @@
 
         chartPizzaHC = new Chart(document.getElementById('chartPizzaHC'), {
             type: 'pie',
-            data: { labels: ['HC Previsto', 'HC Real Realizado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [0,0] }] },
+            data: { labels: ['HC Previsto', 'HC Real Bipado'], datasets: [{ backgroundColor: ['#6366f1', '#10b981'], data: [12, 0] }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { formatter: (v) => v + ' HC', color: '#fff', font: { weight: 'bold' } } } }
         });
 
@@ -836,7 +945,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             conectarBlockchain();
-            renderizarLayoutCalculos();
         });
     </script>
 </body>
