@@ -143,7 +143,7 @@
         
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
-        /* PAINEL ADMIN LATERAL FLUTUANTE (LIVRE - NÃO BLOQUEIA OUTRAS ABAS) */
+        /* PAINEL ADMIN LATERAL FLUTUANTE */
         .admin-sidebar-panel { 
             position: fixed; 
             top: 0; 
@@ -484,7 +484,7 @@
         document.getElementById('adminContractInput').value = contractAddress !== "0x0000000000000000000000000000000000000000" ? contractAddress : "";
         document.getElementById('adminWalletInput').value = adminWalletAddress !== "0x0000000000000000000000000000000000000000" ? adminWalletAddress : "";
 
-        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3 COM O CONTRATO DO REMIX
+        // ESTRUTURA ABI PARA COMUNICAÇÃO WEB3
         const contratoABI = [
             "function registrarPassagem(string memory _chassi, string memory _posto, string memory _operador, bool _statusSucesso) public",
             "function alterarStatusOperador(string memory _operador, bool _entrou) public",
@@ -495,7 +495,7 @@
             return "BR26-K" + Math.floor(1000 + Math.random() * 9000);
         }
 
-        // GERENCIAMENTO VISUAL DO PAINEL ADMIN FLUTUANTE
+        // GERENCIAMENTO VISUAL DO PAINEL ADMIN
         function tentarAcessarAdmin() {
             const user = prompt("Digite o Usuário Administrador:");
             const pass = prompt("Digite a Senha Administrador:");
@@ -507,6 +507,7 @@
             }
         }
 
+        // CONEXÃO DE BOOTSTRAP COM A METAMASK
         function fecharModalAdmin() {
             document.getElementById('admin-modal').classList.remove('open');
             document.getElementById('main-content').style.marginRight = '0px';
@@ -542,13 +543,11 @@
 
                     const nomeOperador = isEntrada ? "Op_Silvia" : "Op_Marcos";
                     
-                    // CHAMADA DA TRANSAÇÃO REAL NA ETHEREUM SEPOLIA
                     const tx = await contrato.alterarStatusOperador(nomeOperador, isEntrada);
                     
                     document.getElementById('blockchain-status-text').innerText = "Minerando Bloco...";
                     await tx.wait(); 
 
-                    // Atualização após aprovação na Blockchain
                     if(isEntrada) { totalBipadoReal++; } else { if(totalBipadoReal > 0) totalBipadoReal--; }
                     renderizarLayoutCalculos();
                     
@@ -566,7 +565,7 @@
             }
         }
 
-        // 2. SIMULAR PASSAGEM DE PEÇA INTEGRADO À METAMASK
+        // 2. SIMULAR PASSAGEM DE PEÇA INTEGRADO À METAMASK (VERSÃO CORRIGIDA COM TIPOS ESTREITOS)
         async function simularPassagemPeca(posto) {
             const contractAddress = localStorage.getItem('web3_contract_address');
             
@@ -584,19 +583,21 @@
                     const signer = await provider.getSigner();
                     const contrato = new ethers.Contract(contractAddress, contratoABI, signer);
 
-                    const chassiAleatorio = generarNovoChassi();
-                    const horaIndex = 7; 
-                    let statusSucesso = true;
+                    // Garante a conversão correta dos tipos primitivos para o Solidity
+                    const chassiAleatorio = String(gerarNovoChassi());
+                    const nomePosto = String(posto);
+                    const nomeOperador = "Op_Linha";
+                    const statusSucesso = (posto !== 'reparo'); // Se for reparo o booleano é explicitamente false
 
-                    if (posto === 'reparo') { statusSucesso = false; }
-
-                    // CHAMADA DA TRANSAÇÃO REAL NA ETHEREUM SEPOLIA
-                    const tx = await contrato.registrarPassagem(chassiAleatorio, posto, "Op_Linha", statusSucesso);
+                    // Executa a chamada Web3 limpa
+                    const tx = await contrato.registrarPassagem(chassiAleatorio, nomePosto, nomeOperador, statusSucesso);
                     
                     document.getElementById('blockchain-status-text').innerText = "Gravando na Rede...";
                     await tx.wait(); 
 
-                    // Execução dos Gráficos Locais pós-confirmação dos Blocos
+                    // --- ATUALIZAÇÃO DOS GRÁFICOS LOCAIS PÓS-MINERAÇÃO ---
+                    const horaIndex = 7; 
+
                     if (posto === 'montagem') {
                         pecasMontagem++;
                         chart3.data.datasets[0].data[0] = Math.floor(Math.random() * 10) + 38;
@@ -636,7 +637,7 @@
                     document.getElementById('blockchain-dot').style.backgroundColor = "#10b981";
 
                 } catch (error) {
-                    console.error(error);
+                    console.error("Erro detalhado da transação:", error);
                     document.getElementById('blockchain-status-text').innerText = "Erro Web3";
                     document.getElementById('blockchain-dot').style.backgroundColor = "#ef4444";
                     alert("Falha ao registrar dados operacionais na Blockchain.");
