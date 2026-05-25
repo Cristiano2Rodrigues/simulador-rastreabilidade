@@ -3,7 +3,7 @@
 // ============================================================
 
 import { inicializarGraficos } from './charts.js';
-import { inicializarBlockchain } from './blockchain.js';
+import { inicializarBlockchain, conectarCarteira } from './blockchain.js';
 import { carregarEstadoHistorico } from './storage.js';
 import { renderizarKPIs, switchTab, tentarAcessarAdmin, fecharModalAdmin, salvarConfiguracoesAdmin, zerarTudoSistema, alterouDataOuTurno, exportarRelatorioExcel } from './ui.js';
 import { simularBipagemCracha, simularPassagemPeca } from './simulacao.js';
@@ -24,6 +24,7 @@ window.alterouDataOuTurno = alterouDataOuTurno;
 window.exportarRelatorioExcel = exportarRelatorioExcel;
 window.simularBipagemCracha = simularBipagemCracha;
 window.simularPassagemPeca = simularPassagemPeca;
+window.conectarCarteira = conectarCarteira;
 
 // Inicialização sequencial
 window.addEventListener('DOMContentLoaded', async () => {

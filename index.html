@@ -32,9 +32,15 @@
                 <button onclick="tentarAcessarAdmin()" class="tab-btn admin-btn"><i class="fa-solid fa-user-gear"></i> Painel Config Admin</button>
             </nav>
         </div>
+        <div style="padding: 0 20px 12px;">
+            <button id="btn-conectar-carteira"
+                style="width:100%; padding: 10px; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000;">
+                <i class="fa-solid fa-wallet"></i> Conectar Carteira
+            </button>
+        </div>
         <div class="status-block">
             <span id="blockchain-dot" class="status-dot"></span>
-            <span id="blockchain-status-text">Buscando MetaMask...</span>
+            <span id="blockchain-status-text">Carteira não conectada</span>
         </div>
     </aside>
 
