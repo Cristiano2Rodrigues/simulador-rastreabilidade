@@ -20,7 +20,7 @@
             background-color: #0f172a; 
             color: #f1f5f9; 
             display: flex; 
-            overflow: hidden; /* Evita barras de rolagem globais bizarras */
+            overflow: hidden; 
         }
         
         aside { 
@@ -58,7 +58,7 @@
             overflow-y: auto; 
             background-color: #0f172a; 
             position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transição suave junto com o painel */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         }
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #334155; padding-bottom: 20px; }
@@ -75,7 +75,7 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* GRIDS DINÂMICOS - SE COMPORTAM BEM EM QUALQUER TAMANHO */
+        /* GRIDS DINÂMICOS */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
@@ -150,9 +150,9 @@
 
         .admin-parameter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; background: #151f32; padding: 12px; border-radius: 10px; border: 1px dashed #334155; }
 
-        /* PAINEL SIDEBAR EMBUTIDO NO FLUXO COMPORTAMENTAL (SEM RECOBRIMENTO) */
+        /* PAINEL SIDEBAR EMBUTIDO NO FLUXO COMPORTAMENTAL */
         .admin-sidebar-panel { 
-            width: 0; /* Começa fechado sem ocupar espaço */
+            width: 0; 
             height: 100vh; 
             background: #1e293b; 
             border-left: 0 solid #334155; 
@@ -164,7 +164,6 @@
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.1s ease; 
         }
         
-        /* QUANDO ABERTO, ELE EXPANDE COISANDO O CONTEÚDO PRINCIPAL PARA O LADO */
         .admin-sidebar-panel.open { 
             width: 440px; 
             border-left: 2px solid #334155;
@@ -621,7 +620,6 @@
             const pass = prompt("Digite a Senha Administrador:");
             if (user === "admin" && pass === "admin") {
                 document.getElementById('admin-modal').classList.add('open');
-                // IMPORTANTE: Redefine o tamanho interno dos gráficos após a compressão do layout
                 setTimeout(forcarResizeGraficos, 310);
             } else {
                 alert("🔒 Acesso negado!");
@@ -630,7 +628,6 @@
 
         function fecharModalAdmin() {
             document.getElementById('admin-modal').classList.remove('open');
-            // IMPORTANTE: Redefine o tamanho interno dos gráficos após a expansão do layout
             setTimeout(forcarResizeGraficos, 310);
         }
 
@@ -730,18 +727,45 @@
         }
 
         function zerarTudoSistema() {
-            let addressSalvo = localStorage.getItem('web3_contract_address');
-            let walletSalva = localStorage.getItem('web3_admin_wallet');
+            // 1. Limpa absolutamente todo o cache local e variáveis de infraestrutura
             localStorage.clear();
-            if(addressSalvo) localStorage.setItem('web3_contract_address', addressSalvo);
-            if(walletSalva) localStorage.setItem('web3_admin_wallet', walletSalva);
             
-            atualProduzido = 0; atualDPMU = 0; totalBipadoReal = 0; entradasReparo = 0; saidasReparo = 0; loopsRetrabalho = 0;
+            // 2. Reseta todas as variáveis de contagem e performance
+            atualProduzido = 0; 
+            atualDPMU = 0; 
+            totalBipadoReal = 0; 
+            entradasReparo = 0; 
+            saidasReparo = 0; 
+            loopsRetrabalho = 0;
+            pecasMontagem = 0; 
+            pecasTeste = 0; 
+            falhasTorque = 0; 
+            falhasFuncionais = 0; 
+            falhasEsteticas = 0;
+
+            // 3. Limpa os campos de inputs do painel admin
+            document.getElementById('adminContractInput').value = '';
+            document.getElementById('adminWalletInput').value = '';
+
+            // 4. Força a desconexão visual da MetaMask na interface
+            document.getElementById('blockchain-status-text').innerText = "Modo Local Sandbox (Desconectado)";
+            document.getElementById('blockchain-dot').style.backgroundColor = "#64748b";
+
+            // 5. Zera os arrays de dados de todos os gráficos na tela
             if(chart1) chart1.data.datasets[0].data = Array(8).fill(0);
             if(chart2) { chart2.data.datasets[0].data = Array(8).fill(0); chart2.data.datasets[1].data = Array(8).fill(0); }
-            salvarEstadoHistorico();
-            carregarEstadoHistorico();
-            alert("Painel local limpo com sucesso!");
+            if(chartDpmu) chartDpmu.data.datasets[0].data = Array(8).fill(0);
+            if(chartReparoFluxo) { chartReparoFluxo.data.datasets[0].data = Array(8).fill(0); chartReparoFluxo.data.datasets[1].data = Array(8).fill(0); }
+            if(chartReparoSerie) chartReparoSerie.data.datasets[0].data = Array(4).fill(0);
+            if(chart3) chart3.data.datasets[0].data = Array(4).fill(0);
+            if(chart4) chart4.data.datasets[0].data = Array(4).fill(0);
+            if(chart5) chart5.data.datasets[0].data = Array(4).fill(0);
+            if(chart6) chart6.data.datasets[0].data = Array(3).fill(0);
+
+            // 6. Atualiza a tela com os novos valores zerados
+            renderizarLayoutCalculos();
+            
+            alert("Painel completamente resetado e MetaMask desconectada da aplicação!");
         }
 
         function renderizarLayoutCalculos() {
