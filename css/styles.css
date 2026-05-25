@@ -115,3 +115,230 @@ header p { font-size: 0.875rem; color: #94a3b8; margin-top: 2px; }
 .modal-body { padding: 20px; overflow-y: auto; flex: 1; min-width: 440px; }
 
 .range-datas-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+/* ============================================================
+   Aba Rastreabilidade — Ledger Blockchain
+   ============================================================ */
+
+.rastreabilidade-busca {
+    background: #1e293b;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.busca-titulo {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.busca-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.busca-input {
+    flex: 1;
+    min-width: 220px;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
+    font-family: monospace;
+    letter-spacing: 1px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.busca-input:focus {
+    border-color: #10b981;
+}
+
+.busca-input::placeholder {
+    color: #475569;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.btn-buscar {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+
+.btn-buscar:hover { opacity: 0.85; }
+
+.busca-dica {
+    font-size: 0.75rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Estado inicial / carregando / erro */
+.ledger-estado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    text-align: center;
+}
+
+/* Cabeçalho do resultado */
+.ledger-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ledger-chassi-titulo {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #f8fafc;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.ledger-chassi-sub {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    display: block;
+}
+
+.btn-exportar-ledger {
+    background: #065f46;
+    border: 1px solid #047857;
+    color: #a7f3d0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.btn-exportar-ledger:hover { opacity: 0.85; }
+
+/* Tabela ledger */
+.ledger-table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.ledger-table thead tr {
+    background: #0f172a;
+}
+
+.ledger-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    border-bottom: 1px solid #334155;
+}
+
+.ledger-table td {
+    padding: 14px 16px;
+    vertical-align: top;
+    border-bottom: 1px solid #1e293b;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.row-par { background: #1e293b; }
+.row-impar { background: #182032; }
+
+.ledger-table tr:last-child td { border-bottom: none; }
+
+/* Badges de status */
+.badge-validado {
+    background: #065f46;
+    color: #34d399;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid #047857;
+}
+
+.badge-reparo {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid #b91c1c;
+}
+
+.posto-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Hashes */
+.hash-cell {
+    font-family: monospace;
+    font-size: 0.7rem;
+    max-width: 280px;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+.hash-label {
+    font-weight: 700;
+    color: #ef4444;
+    margin-right: 4px;
+}
+
+.hash-valor {
+    color: #ef4444;
+}
+
+.hash-valor.prev {
+    color: #94a3b8;
+}

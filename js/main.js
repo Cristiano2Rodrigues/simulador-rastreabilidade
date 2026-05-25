@@ -7,6 +7,8 @@ import { inicializarBlockchain, conectarCarteira } from './blockchain.js';
 import { carregarEstadoHistorico } from './storage.js';
 import { renderizarKPIs, switchTab, tentarAcessarAdmin, fecharModalAdmin, salvarConfiguracoesAdmin, zerarTudoSistema, alterouDataOuTurno, exportarRelatorioExcel } from './ui.js';
 import { simularBipagemCracha, simularPassagemPeca } from './simulacao.js';
+import { consultarChassi, exportarLedgerExcel } from './rastreabilidade.js';
+import { salvarNomePlanta, obterNomePlanta } from './config.js';
 
 // Define data de hoje nos filtros
 const hojeStr = new Date().toISOString().split('T')[0];
@@ -25,6 +27,19 @@ window.exportarRelatorioExcel = exportarRelatorioExcel;
 window.simularBipagemCracha = simularBipagemCracha;
 window.simularPassagemPeca = simularPassagemPeca;
 window.conectarCarteira = conectarCarteira;
+window.exportarLedgerExcel = exportarLedgerExcel;
+
+// Busca o chassi digitado/bipado
+window.buscarChassi = () => {
+    const chassi = document.getElementById('inputChassi').value;
+    consultarChassi(chassi);
+};
+
+// Salva nome da planta ao digitar no admin
+window.salvarPlantaAdmin = () => {
+    const val = document.getElementById('adminPlantaInput').value;
+    salvarNomePlanta(val);
+};
 
 // Inicialização sequencial
 window.addEventListener('DOMContentLoaded', async () => {
@@ -32,4 +47,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     await inicializarBlockchain();
     carregarEstadoHistorico();
     renderizarKPIs();
+
+    // Restaura nome da planta no campo admin
+    const plantaSalva = obterNomePlanta();
+    const inputPlanta = document.getElementById('adminPlantaInput');
+    if (inputPlanta) inputPlanta.value = plantaSalva;
 });

@@ -25,7 +25,8 @@
                 <span style="color: #64748b; font-size: 0.7rem; font-weight: bold;">Network: Sepolia Testnet</span>
             </div>
             <nav>
-                <button onclick="switchTab('producao', this)" class="tab-btn active"><i class="fa-solid fa-chart-line"></i> Prod. & Qualidade</button>
+                <button onclick="switchTab('rastreabilidade', this)" class="tab-btn active"><i class="fa-solid fa-qrcode"></i> Rastreabilidade</button>
+                <button onclick="switchTab('producao', this)" class="tab-btn"><i class="fa-solid fa-chart-line"></i> Prod. & Qualidade</button>
                 <button onclick="switchTab('reparo', this)" class="tab-btn"><i class="fa-solid fa-tools"></i> Análise & Reparo</button>
                 <button onclick="switchTab('processos', this)" class="tab-btn"><i class="fa-solid fa-gears"></i> Eng. de Processos</button>
                 <button onclick="switchTab('melhoria', this)" class="tab-btn"><i class="fa-solid fa-arrow-up-right-dots"></i> Melhoria Contínua</button>
@@ -69,8 +70,41 @@
             </div>
         </header>
 
+        <!-- ABA: Rastreabilidade -->
+        <div id="rastreabilidade" class="tab-content active">
+            <div class="rastreabilidade-busca">
+                <span class="busca-titulo"><i class="fa-solid fa-qrcode"></i> Consulta de Rastreabilidade por Chassi</span>
+                <div class="busca-row">
+                    <input
+                        type="text"
+                        id="inputChassi"
+                        class="busca-input"
+                        placeholder="Digite ou bipe o código do chassi... ex: CHX-20260523-00001"
+                        onkeydown="if(event.key==='Enter') buscarChassi()"
+                        autofocus
+                    >
+                    <button onclick="buscarChassi()" class="btn-buscar">
+                        <i class="fa-solid fa-magnifying-glass"></i> Consultar Blockchain
+                    </button>
+                </div>
+                <span class="busca-dica">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Pressione Enter ou use um leitor de código de barras — a consulta é feita diretamente na blockchain Sepolia, sem necessidade de carteira conectada.
+                </span>
+            </div>
+
+            <div id="ledger-container">
+                <div class="ledger-estado">
+                    <i class="fa-solid fa-link" style="font-size:2.5rem; color:#334155;"></i>
+                    <p style="color:#475569; margin-top:16px; font-size:0.9rem;">
+                        Aguardando consulta.<br>Digite um chassi acima para visualizar o histórico imutável na blockchain.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- ABA: Produção & Qualidade -->
-        <div id="producao" class="tab-content active">
+        <div id="producao" class="tab-content">
             <div class="kpi-grid">
                 <div class="card">
                     <div class="card-header">Meta do Dia <i class="fa-solid fa-bullseye"></i></div>
@@ -287,6 +321,10 @@
             <div class="admin-form-group">
                 <label style="font-size: 0.7rem;">Carteira Oráculo</label>
                 <input type="text" id="adminWalletInput" class="admin-input-text" placeholder="0x...">
+            </div>
+            <div class="admin-form-group">
+                <label style="font-size: 0.7rem;">Nome da Planta</label>
+                <input type="text" id="adminPlantaInput" class="admin-input-text" placeholder="ex: Planta SP - Matriz" oninput="salvarPlantaAdmin()">
             </div>
         </div>
     </div>
