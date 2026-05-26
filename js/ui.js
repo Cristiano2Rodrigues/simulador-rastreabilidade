@@ -158,9 +158,26 @@ export function exportarRelatorioExcel() {
     const dataFim    = document.getElementById('dataPlanilhaFim').value;
     if (!dataInicio || !dataFim) { alert("Selecione o intervalo de datas."); return; }
 
+    // Diagnóstico: lista todas as chaves de registros no localStorage
+    const todasChaves = Object.keys(localStorage).filter(k => k.startsWith('registros_'));
+    console.log("🔍 Chaves de registros no localStorage:", todasChaves);
+    todasChaves.forEach(k => {
+        try {
+            const lista = JSON.parse(localStorage.getItem(k) || '[]');
+            console.log(`  ${k}: ${lista.length} registro(s)`, lista);
+        } catch(e) {}
+    });
+    console.log("📅 Buscando entre:", dataInicio, "e", dataFim);
+
     const registros = obterRegistrosPorPeriodo(dataInicio, dataFim);
+    console.log("📦 Registros encontrados:", registros.length, registros);
+
     if (registros.length === 0) {
-        alert("Nenhum registro encontrado para o período selecionado.\nRealiza operações no sistema para gerar dados.");
+        // Tenta encontrar chaves próximas para sugerir ao usuário
+        const sugestao = todasChaves.length > 0
+            ? `\n\nChaves encontradas no sistema: ${todasChaves.join(', ')}`
+            : '\n\nNenhum dado encontrado no sistema.';
+        alert("Nenhum registro encontrado para o período selecionado." + sugestao);
         return;
     }
 
