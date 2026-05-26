@@ -14,7 +14,9 @@ let carteiraConectada = false;
 function gerarChassi() {
     const id = String(contadorChassi).padStart(5, '0');
     contadorChassi++;
-    return `CHX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${id}`;
+    const d = new Date();
+    const dataLocal = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    return `CHX-${dataLocal}-${id}`;
 }
 
 // Chamado na inicialização — apenas verifica se MetaMask existe, NÃO conecta
@@ -198,12 +200,15 @@ function atualizarStatusTx(msg, cor) {
 
 // Salva cada transação localmente vinculada à data e turno atual
 function salvarRegistroLocal({ chassi, posto, matricula, sucesso, txHash, timestamp }) {
-    const data = new Date(timestamp).toISOString().split('T')[0];
+    // Usa data LOCAL (não UTC) para evitar desencontro de fuso horário
+    const d = new Date(timestamp);
+    const data = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const chave = `registros_${data}`;
     let lista = [];
     try { lista = JSON.parse(localStorage.getItem(chave) || '[]'); } catch(e) {}
     lista.push({ chassi, posto, matricula, sucesso, txHash, timestamp });
     localStorage.setItem(chave, JSON.stringify(lista));
+    console.log(`💾 Salvo: chave=${chave} | chassi=${chassi} | total=${lista.length}`);
 }
 
 // Retorna todos os registros de um intervalo de datas
