@@ -196,6 +196,34 @@ function atualizarStatusTx(msg, cor) {
     if (dot) dot.style.backgroundColor = cor;
 }
 
+// Salva cada transação localmente vinculada à data e turno atual
+function salvarRegistroLocal({ chassi, posto, matricula, sucesso, txHash, timestamp }) {
+    const data = new Date(timestamp).toISOString().split('T')[0];
+    const chave = `registros_${data}`;
+    let lista = [];
+    try { lista = JSON.parse(localStorage.getItem(chave) || '[]'); } catch(e) {}
+    lista.push({ chassi, posto, matricula, sucesso, txHash, timestamp });
+    localStorage.setItem(chave, JSON.stringify(lista));
+}
+
+// Retorna todos os registros de um intervalo de datas
+export function obterRegistrosPorPeriodo(dataInicio, dataFim) {
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    fim.setHours(23, 59, 59);
+    const registros = [];
+    const cursor = new Date(inicio);
+    while (cursor <= fim) {
+        const chave = `registros_${cursor.toISOString().split('T')[0]}`;
+        try {
+            const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+            registros.push(...lista);
+        } catch(e) {}
+        cursor.setDate(cursor.getDate() + 1);
+    }
+    return registros;
+}
+
 function exibirLinkEtherscan(txHash, chassi, operador) {
     const container = document.getElementById('console-acoes-rapidas');
     if (!container) return;

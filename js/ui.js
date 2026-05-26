@@ -3,6 +3,7 @@
 // ============================================================
 
 import { estado } from './config.js';
+import { obterRegistrosPorPeriodo } from './blockchain.js';
 import { atualizarTodosGraficos, forcarResizeGraficos } from './charts.js';
 import { salvarEstadoHistorico, limparTudoStorage, carregarEstadoHistorico } from './storage.js';
 import { inicializarBlockchain } from './blockchain.js';
@@ -150,29 +151,97 @@ export function alterouDataOuTurno() {
     renderizarKPIs();
 }
 
-// ---- Exportação Excel --------------------------------------
+// ---- Exportação Excel Histórica ----------------------------
 
 export function exportarRelatorioExcel() {
     const dataInicio = document.getElementById('dataPlanilhaInicio').value;
-    const dataFim = document.getElementById('dataPlanilhaFim').value;
+    const dataFim    = document.getElementById('dataPlanilhaFim').value;
     if (!dataInicio || !dataFim) { alert("Selecione o intervalo de datas."); return; }
 
+    const registros = obterRegistrosPorPeriodo(dataInicio, dataFim);
+    if (registros.length === 0) {
+        alert("Nenhum registro encontrado para o período selecionado.\nRealiza operações no sistema para gerar dados.");
+        return;
+    }
+
     const wb = XLSX.utils.book_new();
-    const dados = [
-        ["Filtro de Data Selecionado", `${dataInicio} até ${dataFim}`],
-        ["Métrica Operacional", "Valor Realizado Acumulado"],
-        ["---", "---"],
-        ["Total Peças Embaladas", estado.atualProduzido],
-        ["Total Rejeições Reparo", estado.entradasReparo],
-        ["Saídas Liberadas do Reparo", estado.saidasReparo],
-        ["Loops de Retrabalho", estado.loopsRetrabalho],
-        ["DPMU Consolidado", Math.round(estado.atualDPMU)],
-        ["Operadores Ativos (Bipados)", estado.totalBipadoReal],
-        ["Falhas de Torque", estado.falhasTorque],
-        ["Falhas Funcionais", estado.falhasFuncionais]
+
+    // ---- ABA 1: Rastreabilidade por Peça ----
+    // Agrupa registros por chassi, monta uma linha por peça
+    const porChassi = {};
+    registros.forEach(r => {
+        if (!porChassi[r.chassi]) porChassi[r.chassi] = [];
+        porChassi[r.chassi].push(r);
+    });
+
+    const cabecalho = [
+        "Código do Produto",
+        "Posto de Montagem",
+        "Operador de Montagem",
+        "Posto de Teste",
+        "Operador de Teste",
+        "Posto de Embalagem",
+        "Operador de Embalagem",
+        "Posto de Reparo",
+        "Operador do Reparo",
+        "Hash das Transações (SHA-256)"
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet(dados);
-    XLSX.utils.book_append_sheet(wb, ws, "Sumário Operacional");
-    XLSX.writeFile(wb, `Relatorio_${dataInicio}_a_${dataFim}.xlsx`);
+    const linhasRastreabilidade = [cabecalho];
+
+    Object.entries(porChassi).forEach(([chassi, regs]) => {
+        const porPosto = (nome) => regs.find(r => r.posto.toLowerCase().includes(nome));
+        const hora = (r) => r ? new Date(r.timestamp).toLocaleTimeString('pt-BR') : '—';
+        const mat  = (r) => r ? String(r.matricula).slice(0, 4) : '—';
+        const hashes = regs.map(r => r.txHash || '—');
+
+        const linhaDados = [
+            chassi,
+            hora(porPosto('montagem')),
+            mat(porPosto('montagem')),
+            hora(porPosto('teste')),
+            mat(porPosto('teste')),
+            hora(porPosto('embalagem')),
+            mat(porPosto('embalagem')),
+            hora(porPosto('reparo')),
+            mat(porPosto('reparo')),
+            hashes[0] || '—'
+        ];
+
+        linhasRastreabilidade.push(linhaDados);
+
+        // Hashes adicionais abaixo da linha principal
+        hashes.slice(1).forEach(h => {
+            linhasRastreabilidade.push(['','','','','','','','','', h]);
+        });
+    });
+
+    const wsRastr = XLSX.utils.aoa_to_sheet(linhasRastreabilidade);
+    wsRastr['!cols'] = [
+        { wch: 24 }, { wch: 16 }, { wch: 20 },
+        { wch: 16 }, { wch: 20 }, { wch: 16 },
+        { wch: 20 }, { wch: 16 }, { wch: 20 },
+        { wch: 68 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsRastr, "Rastreabilidade");
+
+    // ---- ABA 2: Sumário Operacional ----
+    const sumario = [
+        ["Período", `${dataInicio} até ${dataFim}`],
+        ["Total de Registros", registros.length],
+        ["---", "---"],
+        ["Total Peças Embaladas",        estado.atualProduzido],
+        ["Total Rejeições Reparo",        estado.entradasReparo],
+        ["Saídas Liberadas do Reparo",    estado.saidasReparo],
+        ["Loops de Retrabalho",           estado.loopsRetrabalho],
+        ["DPMU Consolidado",              Math.round(estado.atualDPMU)],
+        ["Operadores Ativos (Bipados)",   estado.totalBipadoReal],
+        ["Falhas de Torque",              estado.falhasTorque],
+        ["Falhas Funcionais",             estado.falhasFuncionais]
+    ];
+    const wsSumario = XLSX.utils.aoa_to_sheet(sumario);
+    wsSumario['!cols'] = [{ wch: 28 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsSumario, "Sumário Operacional");
+
+    XLSX.writeFile(wb, `Historico_${dataInicio}_a_${dataFim}.xlsx`);
 }
