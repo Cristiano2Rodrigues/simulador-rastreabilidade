@@ -115,7 +115,7 @@ export async function conectarCarteira(mostrarPopup = true) {
     }
 }
 
-export async function registrarPassagemBlockchain(posto, sucesso) {
+export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'SIST') {
     // Se não conectado, avisa e pede para conectar
     if (!contrato || !carteiraConectada) {
         const queroConectar = confirm(
@@ -126,7 +126,7 @@ export async function registrarPassagemBlockchain(posto, sucesso) {
     }
 
     const chassi = gerarChassi();
-    const operador = await signer.getAddress();
+    const operador = matricula; // Matrícula de 4 dígitos do operador
 
     try {
         atualizarStatusTx("⏳ Aguardando assinatura...", "#f59e0b");

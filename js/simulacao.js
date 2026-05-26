@@ -1,29 +1,106 @@
 // ============================================================
-// simulacao.js — Lógica de simulação dos postos e KPIs
+// simulacao.js — Lógica de simulação dos postos de produção
 // ============================================================
 
 import { estado } from './config.js';
 import { registrarPassagemBlockchain, registrarOperadorBlockchain } from './blockchain.js';
-import { chart1, chart2, chartDpmu, chartReparoFluxo, chart3, chart4, chart5, chart6, chartReparoSerie } from './charts.js';
+import { chart1, chart2, chartDpmu, chartReparoFluxo, chart3, chart4, chart5, chart6 } from './charts.js';
 import { salvarEstadoHistorico } from './storage.js';
 import { renderizarKPIs } from './ui.js';
 
+// ============================================================
+// MATRÍCULA — 4 dígitos numéricos
+// Em produção: vem do leitor NFC
+// Em simulação: gerada aleatoriamente
+// ============================================================
+
+// Gera matrícula numérica aleatória de 4 dígitos (simulação)
+function gerarMatriculaAleatoria() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+// Retorna matrícula da sessão atual (setada pelo NFC ou pela simulação)
+export function obterMatricula() {
+    return localStorage.getItem('matricula_operador') || gerarMatriculaAleatoria();
+}
+
+export function salvarMatricula(matricula) {
+    const limpa = String(matricula).replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+    localStorage.setItem('matricula_operador', limpa);
+    atualizarExibicaoMatricula(limpa);
+    return limpa;
+}
+
+// Atualiza o display de matrícula no painel admin (se visível)
+function atualizarExibicaoMatricula(matricula) {
+    const el = document.getElementById('display-matricula-atual');
+    if (el) el.innerText = matricula;
+}
+
+// ============================================================
+// NFC — Web NFC API (suportada no Chrome Android)
+// Escuta leituras de crachá e registra automaticamente
+// ============================================================
+export async function inicializarNFC() {
+    if (!('NDEFReader' in window)) {
+        console.info('NFC não disponível neste dispositivo/navegador. Usando modo simulação.');
+        return false;
+    }
+
+    try {
+        const reader = new NDEFReader();
+        await reader.scan();
+
+        reader.addEventListener('reading', ({ message }) => {
+            for (const record of message.records) {
+                if (record.recordType === 'text') {
+                    const decoder = new TextDecoder(record.encoding || 'utf-8');
+                    const matricula = decoder.decode(record.data).replace(/\D/g, '').slice(0, 4);
+                    if (matricula.length === 4) {
+                        salvarMatricula(matricula);
+                        console.log(`✅ NFC: Matrícula ${matricula} lida com sucesso.`);
+                        // Registra entrada do operador automaticamente via NFC
+                        simularBipagemCracha(true);
+                    }
+                }
+            }
+        });
+
+        console.log('📡 Leitor NFC ativo — aguardando crachás...');
+        return true;
+
+    } catch (err) {
+        console.warn('Erro ao inicializar NFC:', err);
+        return false;
+    }
+}
+
+// ============================================================
+// BIPAGEM DE CRACHÁ
+// ============================================================
 export async function simularBipagemCracha(isEntrada) {
+    // Em simulação: gera matrícula aleatória a cada bipagem
+    // Em produção com NFC: já foi salva pelo leitor antes de chegar aqui
+    const matricula = isEntrada ? gerarMatriculaAleatoria() : obterMatricula();
+    salvarMatricula(matricula);
+
     if (isEntrada) {
         estado.totalBipadoReal++;
     } else {
         if (estado.totalBipadoReal > 0) estado.totalBipadoReal--;
     }
 
-    // Registra operador na blockchain
-    const operadorNome = `OP-${String(estado.totalBipadoReal).padStart(3, '0')}`;
-    await registrarOperadorBlockchain(operadorNome, isEntrada);
-
+    await registrarOperadorBlockchain(matricula, isEntrada);
     salvarEstadoHistorico();
     renderizarKPIs();
 }
 
+// ============================================================
+// PASSAGEM DE PEÇA POR POSTO
+// ============================================================
 export async function simularPassagemPeca(posto) {
+    // Usa matrícula da sessão atual (NFC ou simulação)
+    const matricula = obterMatricula();
     const idxHora = estado.horaApontamentoAtual % 8;
     let sucesso = true;
 
@@ -68,18 +145,14 @@ export async function simularPassagemPeca(posto) {
         if (chart4) chart4.data.datasets[0].data[3] = 95;
         if (chart5) chart5.data.datasets[0].data[3] += 1;
 
-        // Avança ponteiro de hora a cada peça finalizada
         estado.horaApontamentoAtual++;
     }
 
-    // ✅ Registra na blockchain com transação real
-    await registrarPassagemBlockchain(posto, sucesso);
-
+    await registrarPassagemBlockchain(posto, sucesso, matricula);
     salvarEstadoHistorico();
     renderizarKPIs();
 }
 
-// Lê os tempos de ciclo dos inputs do painel admin (configuráveis)
 function obterTempoCiclo(posto) {
     const ids = {
         montagem: 'inputTcMontagem',
@@ -88,7 +161,6 @@ function obterTempoCiclo(posto) {
         embalagem: 'inputTcEmbalagem'
     };
     const el = document.getElementById(ids[posto]);
-    // Fallback para valores padrão se os inputs não existirem
     const defaults = { montagem: 42, teste: 39, reparo: 58, embalagem: 34 };
     return el ? (parseInt(el.value) || defaults[posto]) : defaults[posto];
 }

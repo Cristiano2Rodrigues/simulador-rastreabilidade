@@ -6,7 +6,7 @@ import { inicializarGraficos } from './charts.js';
 import { inicializarBlockchain, conectarCarteira } from './blockchain.js';
 import { carregarEstadoHistorico } from './storage.js';
 import { renderizarKPIs, switchTab, tentarAcessarAdmin, fecharModalAdmin, salvarConfiguracoesAdmin, zerarTudoSistema, alterouDataOuTurno, exportarRelatorioExcel } from './ui.js';
-import { simularBipagemCracha, simularPassagemPeca } from './simulacao.js';
+import { simularBipagemCracha, simularPassagemPeca, obterMatricula, inicializarNFC } from './simulacao.js';
 import { consultarChassi, exportarLedgerExcel } from './rastreabilidade.js';
 import { salvarNomePlanta, obterNomePlanta } from './config.js';
 
@@ -47,6 +47,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     await inicializarBlockchain();
     carregarEstadoHistorico();
     renderizarKPIs();
+
+    // Exibe matrícula atual no display (NFC ou última simulação)
+    const matriculaSalva = obterMatricula();
+    const displayMatricula = document.getElementById('display-matricula-atual');
+    if (displayMatricula && matriculaSalva) displayMatricula.innerText = matriculaSalva;
+
+    // Inicializa leitor NFC se disponível no dispositivo
+    await inicializarNFC();
 
     // Restaura nome da planta no campo admin
     const plantaSalva = obterNomePlanta();

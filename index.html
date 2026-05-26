@@ -236,6 +236,15 @@
                 <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8; border-bottom: 1px solid #222e45; padding-bottom: 8px;">
                     <span><i class="fa-solid fa-tower-broadcast"></i> CONSOLE DE TRANSMISSÃO EM TEMPO REAL (SEPOLIA)</span>
                 </div>
+
+                <!-- Display informativo de matrícula (lida pelo NFC ou gerada na simulação) -->
+                <div style="background:#0a1628; border:1px solid #334155; border-radius:8px; padding:8px 14px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:0.65rem; color:#64748b; font-weight:700; text-transform:uppercase;">
+                        <i class="fa-solid fa-id-badge"></i> Matrícula Ativa
+                    </span>
+                    <span id="display-matricula-atual" style="font-family:monospace; font-size:1rem; font-weight:800; color:#a3e635; letter-spacing:4px;">—</span>
+                </div>
+
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; flex-direction: column; gap: 6px;">
                         <span style="font-size: 0.65rem; color: #64748b; font-weight: bold;">Registrar Operador (Assinatura na Rede):</span>

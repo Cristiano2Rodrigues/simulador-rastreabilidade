@@ -6,19 +6,13 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI, obterNomePlanta } from './config.js';
 
 let contratoLeitura = null;
 
-// Inicializa contrato em modo leitura (não precisa de carteira)
 async function obterContrato() {
     if (contratoLeitura) return contratoLeitura;
-
-    // Usa provider público da Sepolia para leitura (sem MetaMask obrigatório)
-    const publicProvider = new ethers.JsonRpcProvider(
-        "https://rpc.sepolia.org"
-    );
+    const publicProvider = new ethers.JsonRpcProvider("https://rpc.sepolia.org");
     contratoLeitura = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, publicProvider);
     return contratoLeitura;
 }
 
-// Gera hash SHA-256 de uma string
 async function gerarHash(texto) {
     const encoder = new TextEncoder();
     const data = encoder.encode(texto);
@@ -27,7 +21,27 @@ async function gerarHash(texto) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Consulta histórico completo de um chassi na blockchain
+function formatarHora(timestamp) {
+    return new Date(Number(timestamp) * 1000).toLocaleTimeString('pt-BR');
+}
+
+function formatarDataHora(timestamp) {
+    return new Date(Number(timestamp) * 1000).toLocaleString('pt-BR');
+}
+
+// Exibe matrícula de 4 dígitos diretamente (ex: A3K9)
+// Se vier endereço de carteira antigo, exibe abreviado
+function formatarMatricula(operador) {
+    if (!operador || operador === '0x0000' || operador === '') return '—';
+    // Matrícula de 4 caracteres (novo formato)
+    if (operador.length === 4) return operador.toUpperCase();
+    // Endereço de carteira (formato antigo — fallback)
+    if (operador.startsWith('0x') && operador.length === 42) {
+        return operador.slice(0, 6) + '...' + operador.slice(-4);
+    }
+    return operador;
+}
+
 export async function consultarChassi(chassi) {
     if (!chassi || chassi.trim() === '') {
         exibirErro("Digite um código de chassi válido.");
@@ -54,15 +68,12 @@ export async function consultarChassi(chassi) {
     }
 }
 
-// Renderiza a tabela ledger com os registros
 async function renderizarLedger(chassi, historico) {
     const container = document.getElementById('ledger-container');
     const planta = obterNomePlanta();
 
-    // Ordena do mais antigo para o mais recente
     const registros = [...historico].sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
 
-    // Gera hashes encadeados (cada um depende do anterior)
     let hashAnterior = '0'.repeat(64);
     const hashes = [];
     for (let i = 0; i < registros.length; i++) {
@@ -73,14 +84,11 @@ async function renderizarLedger(chassi, historico) {
         hashAnterior = hash;
     }
 
-    // Renderiza do mais recente para o mais antigo (como na imagem)
     const registrosDesc = [...registros].reverse();
     const hashesDesc = [...hashes].reverse();
 
     let linhas = '';
     registrosDesc.forEach((r, idx) => {
-        const data = new Date(Number(r.timestamp) * 1000);
-        const dataStr = data.toLocaleString('pt-BR');
         const status = r.statusSucesso;
         const statusBadge = status
             ? `<span class="badge-validado">Validado</span>`
@@ -88,21 +96,18 @@ async function renderizarLedger(chassi, historico) {
 
         const numeroRegistro = registros.length - idx;
         const h = hashesDesc[idx];
-        const operadorCurto = r.operador.length > 20
-            ? `${r.operador.slice(0, 6)}...${r.operador.slice(-4)}`
-            : r.operador;
+        const matricula = formatarMatricula(r.operador);
 
         linhas += `
             <tr class="${idx % 2 === 0 ? 'row-par' : 'row-impar'}">
                 <td>${statusBadge}</td>
-                <td>${dataStr}</td>
+                <td>${formatarDataHora(r.timestamp)}</td>
                 <td><strong>${chassi}</strong></td>
-                <td>${operadorCurto}<br><span class="posto-label">${r.posto} • #${numeroRegistro}</span></td>
+                <td><strong>${matricula}</strong><br><span class="posto-label">${r.posto} • #${numeroRegistro}</span></td>
                 <td>${planta}</td>
                 <td class="hash-cell">
                     <span class="hash-label">Hash:</span>
-                    <span class="hash-valor">${h.atual}</span>
-                    <br>
+                    <span class="hash-valor">${h.atual}</span><br>
                     <span class="hash-label">Prev:</span>
                     <span class="hash-valor prev">${h.anterior}</span>
                 </td>
@@ -123,11 +128,8 @@ async function renderizarLedger(chassi, historico) {
             <table class="ledger-table">
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Data/Hora</th>
-                        <th>Produto</th>
-                        <th>Operador / Posto</th>
-                        <th>Planta</th>
+                        <th>Status</th><th>Data/Hora</th><th>Produto</th>
+                        <th>Operador / Posto</th><th>Planta</th>
                         <th>Hash de Segurança (SHA-256)</th>
                     </tr>
                 </thead>
@@ -135,52 +137,105 @@ async function renderizarLedger(chassi, historico) {
             </table>
         </div>`;
 
-    // Salva último histórico para exportação
     window._ultimoHistoricoLedger = { chassi, registros, hashes, planta };
 }
 
-// Exporta o ledger para Excel
 export async function exportarLedgerExcel(chassi) {
     const dados = window._ultimoHistoricoLedger;
     if (!dados) return;
 
     const { registros, hashes, planta } = dados;
-    const registrosDesc = [...registros].reverse();
-    const hashesDesc = [...hashes].reverse();
 
     const wb = XLSX.utils.book_new();
 
-    const linhas = [
-        ["Status", "Data/Hora", "Produto (Chassi)", "Operador", "Posto", "Nº Registro", "Planta", "Hash SHA-256", "Hash Anterior (Prev)"]
+    const rMontagem  = encontrarPosto(registros, 'montagem');
+    const rTeste     = encontrarPosto(registros, 'teste');
+    const rEmbalagem = encontrarPosto(registros, 'embalagem');
+    const rReparo    = encontrarPosto(registros, 'reparo');
+
+    const todosHashes = hashes.map(h => h.atual);
+
+    const cabecalho = [
+        "Código do Produto",
+        "Posto de Montagem",
+        "Operador de Montagem",
+        "Posto de Teste",
+        "Operador de Teste",
+        "Posto de Embalagem",
+        "Operador de Embalagem",
+        "Posto de Reparo",
+        "Operador do Reparo",
+        "Hash das Transações (SHA-256)"
     ];
 
-    registrosDesc.forEach((r, idx) => {
-        const data = new Date(Number(r.timestamp) * 1000).toLocaleString('pt-BR');
-        const numeroRegistro = registros.length - idx;
+    const linhaDados = [
+        chassi,
+        rMontagem  ? formatarHora(rMontagem.timestamp)         : '—',
+        rMontagem  ? formatarMatricula(rMontagem.operador)      : '—',
+        rTeste     ? formatarHora(rTeste.timestamp)             : '—',
+        rTeste     ? formatarMatricula(rTeste.operador)         : '—',
+        rEmbalagem ? formatarHora(rEmbalagem.timestamp)         : '—',
+        rEmbalagem ? formatarMatricula(rEmbalagem.operador)     : '—',
+        rReparo    ? formatarHora(rReparo.timestamp)            : '—',
+        rReparo    ? formatarMatricula(rReparo.operador)        : '—',
+        todosHashes[0] || '—'
+    ];
+
+    const linhasExtras = todosHashes.slice(1).map(h => [
+        '', '', '', '', '', '', '', '', '', h
+    ]);
+
+    const wsRastreabilidade = XLSX.utils.aoa_to_sheet([
+        cabecalho,
+        linhaDados,
+        ...linhasExtras
+    ]);
+
+    wsRastreabilidade['!cols'] = [
+        { wch: 22 }, { wch: 18 }, { wch: 22 },
+        { wch: 18 }, { wch: 22 }, { wch: 18 },
+        { wch: 22 }, { wch: 18 }, { wch: 22 },
+        { wch: 68 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, wsRastreabilidade, "Rastreabilidade");
+
+    // Aba ledger completo
+    const cabLedger = [
+        "Nº", "Status", "Data/Hora", "Chassi", "Posto",
+        "Operador (Matrícula)", "Planta", "Hash SHA-256", "Hash Anterior (Prev)"
+    ];
+
+    const registrosDesc = [...registros].reverse();
+    const hashesDesc    = [...hashes].reverse();
+
+    const linhasLedger = registrosDesc.map((r, idx) => {
         const h = hashesDesc[idx];
-        linhas.push([
+        return [
+            registros.length - idx,
             r.statusSucesso ? "Validado" : "Reparo",
-            data,
+            formatarDataHora(r.timestamp),
             chassi,
-            r.operador,
             r.posto,
-            numeroRegistro,
+            formatarMatricula(r.operador),
             planta,
             h.atual,
             h.anterior
-        ]);
+        ];
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(linhas);
-
-    // Largura das colunas
-    ws['!cols'] = [
-        { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 45 },
-        { wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 65 }, { wch: 65 }
+    const wsLedger = XLSX.utils.aoa_to_sheet([cabLedger, ...linhasLedger]);
+    wsLedger['!cols'] = [
+        { wch: 5 }, { wch: 10 }, { wch: 20 }, { wch: 22 },
+        { wch: 15 }, { wch: 18 }, { wch: 20 }, { wch: 68 }, { wch: 68 }
     ];
 
-    XLSX.utils.book_append_sheet(wb, ws, "Ledger Blockchain");
+    XLSX.utils.book_append_sheet(wb, wsLedger, "Ledger Blockchain");
     XLSX.writeFile(wb, `Rastreabilidade_${chassi}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function encontrarPosto(registros, nomeChave) {
+    return registros.find(r => r.posto.toLowerCase().includes(nomeChave)) || null;
 }
 
 function exibirCarregando(chassi) {
