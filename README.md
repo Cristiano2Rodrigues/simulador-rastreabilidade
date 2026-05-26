@@ -25,14 +25,11 @@ projeto-hackweb/
 
 ---
 
-## 🚀 Como subir no GitHub Pages
+## 🚀 Como eu subi os arquivos no GitHub 
 
-1. Crie um repositório no GitHub (pode ser público)
+1. Criei um repositório no GitHub
 2. Faça upload de todos os arquivos **mantendo a estrutura de pastas**
-3. Vá em **Settings → Pages → Branch: main → / (root)**
-4. Aguarde ~1 min e acesse: `https://seu-usuario.github.io/nome-do-repo`
-
-> ⚠️ **Importante:** o GitHub Pages serve os arquivos via HTTP, o que é necessário para os módulos ES6 funcionarem. Abrir o `index.html` direto no computador (sem servidor) não vai funcionar.
+3. Fui em **Settings → Pages → Branch: main**
 
 ---
 
@@ -48,20 +45,6 @@ projeto-hackweb/
 - Rede Sepolia configurada (o sistema troca automaticamente se necessário)
 - Saldo de **SepoliaETH** na carteira (para pagar o gás das transações)
   - Faucet gratuito: https://sepoliafaucet.com
-
----
-
-## 🛠️ Testando Localmente
-
-Use a extensão **Live Server** do VS Code:
-1. Abra a pasta do projeto no VS Code
-2. Clique com botão direito em `index.html` → **Open with Live Server**
-
-Ou use Python:
-```bash
-python -m http.server 8080
-# Acesse: http://localhost:8080
-```
 
 ---
 
