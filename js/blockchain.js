@@ -118,17 +118,18 @@ export async function conectarCarteira(mostrarPopup = true) {
 }
 
 export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'SIST') {
-    // Se não conectado, avisa e pede para conectar
-    if (!contrato || !carteiraConectada) {
-        const queroConectar = confirm(
-            "Você precisa conectar sua carteira MetaMask para registrar na blockchain.\n\nDeseja conectar agora?"
-        );
-        if (queroConectar) await conectarCarteira(true);
-        if (!contrato) return null; // Ainda não conectado
-    }
-
     const chassi = gerarChassi();
-    const operador = matricula; // Matrícula de 4 dígitos do operador
+    const operador = matricula;
+    const timestamp = Date.now();
+
+    // Sempre salva localmente primeiro (garante histórico mesmo sem blockchain)
+    salvarRegistroLocal({ chassi, posto, matricula, sucesso, txHash: '—', timestamp });
+
+    // Se não conectado, salva local e retorna sem popup
+    if (!contrato || !carteiraConectada) {
+        atualizarStatusTx("⚠️ Salvo localmente (sem blockchain)", "#f59e0b");
+        return null;
+    }
 
     try {
         atualizarStatusTx("⏳ Aguardando assinatura...", "#f59e0b");
@@ -138,11 +139,15 @@ export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'S
         atualizarStatusTx("⛏️ Minerando...", "#38bdf8");
         await tx.wait();
 
+        const txHash = tx.hash;
         atualizarStatusTx("✅ TX confirmada!", "#10b981");
-        console.log(`✅ Chassi: ${chassi} | TX: ${tx.hash}`);
+        console.log(`✅ Chassi: ${chassi} | TX: ${txHash}`);
 
-        exibirLinkEtherscan(tx.hash, chassi, operador);
-        return tx.hash;
+        // Atualiza o registro local com o hash real da transação
+        _atualizarHashRegistroLocal(chassi, txHash);
+
+        exibirLinkEtherscan(txHash, chassi, operador);
+        return txHash;
 
     } catch (err) {
         if (err.code === 4001) {
@@ -153,6 +158,22 @@ export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'S
         }
         return null;
     }
+}
+
+// Atualiza o txHash de um registro já salvo localmente
+function _atualizarHashRegistroLocal(chassi, txHash) {
+    const d = new Date();
+    const data = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const chave = `registros_${data}`;
+    try {
+        const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+        const idx = [...lista].reverse().findIndex(r => r.chassi === chassi);
+        if (idx !== -1) {
+            const realIdx = lista.length - 1 - idx;
+            lista[realIdx].txHash = txHash;
+            localStorage.setItem(chave, JSON.stringify(lista));
+        }
+    } catch(e) {}
 }
 
 export async function registrarOperadorBlockchain(operador, entrou) {
@@ -199,7 +220,7 @@ function atualizarStatusTx(msg, cor) {
 }
 
 // Salva cada transação localmente vinculada à data e turno atual
-function salvarRegistroLocal({ chassi, posto, matricula, sucesso, txHash, timestamp }) {
+export function salvarRegistroLocal({ chassi, posto, matricula, sucesso, txHash, timestamp }) {
     // Usa data LOCAL (não UTC) para evitar desencontro de fuso horário
     const d = new Date(timestamp);
     const data = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
