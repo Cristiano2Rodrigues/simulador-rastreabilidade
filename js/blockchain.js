@@ -8,15 +8,27 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from './config.js';
 let provider = null;
 let signer = null;
 let contrato = null;
-let contadorChassi = 1;
 let carteiraConectada = false;
 
-function gerarChassi() {
-    const id = String(contadorChassi).padStart(5, '0');
-    contadorChassi++;
+// ---- Gerenciamento de chassi por peça ----
+// Cada peça tem um chassi único compartilhado entre todos os postos
+let _chassiAtual = null;
+let _contadorChassi = parseInt(localStorage.getItem('_chassiCounter') || '0');
+
+export function gerarNovoChassiPeca() {
+    _contadorChassi++;
+    localStorage.setItem('_chassiCounter', String(_contadorChassi));
+    const id = String(_contadorChassi).padStart(5, '0');
     const d = new Date();
     const dataLocal = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    return `CHX-${dataLocal}-${id}`;
+    _chassiAtual = `CHX-${dataLocal}-${id}`;
+    console.log(`🔖 Novo chassi de peça: ${_chassiAtual}`);
+    return _chassiAtual;
+}
+
+export function obterChassiAtual() {
+    if (!_chassiAtual) gerarNovoChassiPeca();
+    return _chassiAtual;
 }
 
 // Chamado na inicialização — apenas verifica se MetaMask existe, NÃO conecta
@@ -117,8 +129,8 @@ export async function conectarCarteira(mostrarPopup = true) {
     }
 }
 
-export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'SIST') {
-    const chassi = gerarChassi();
+export async function registrarPassagemBlockchain(posto, sucesso, matricula = 'SIST', chassi = null) {
+    if (!chassi) chassi = obterChassiAtual();
     const operador = matricula;
     const timestamp = Date.now();
 

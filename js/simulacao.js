@@ -3,7 +3,7 @@
 // ============================================================
 
 import { estado } from './config.js';
-import { registrarPassagemBlockchain, registrarOperadorBlockchain } from './blockchain.js';
+import { registrarPassagemBlockchain, registrarOperadorBlockchain, gerarNovoChassiPeca, obterChassiAtual } from './blockchain.js';
 import { chart1, chart2, chartDpmu, chartReparoFluxo, chart3, chart4, chart5, chart6 } from './charts.js';
 import { salvarEstadoHistorico } from './storage.js';
 import { renderizarKPIs } from './ui.js';
@@ -104,6 +104,17 @@ export async function simularPassagemPeca(posto) {
     const idxHora = estado.horaApontamentoAtual % 8;
     let sucesso = true;
 
+    // Montagem: inicia uma nova peça (gera novo chassi)
+    // Demais postos: reutilizam o chassi da peça em produção
+    if (posto === 'montagem') {
+        gerarNovoChassiPeca();
+    }
+    const chassiAtual = obterChassiAtual();
+
+    // Atualiza display do chassi no console
+    const displayChassi = document.getElementById('display-chassi-atual');
+    if (displayChassi) displayChassi.textContent = chassiAtual;
+
     if (posto === 'montagem') {
         estado.pecasMontagem++;
         if (chart3) chart3.data.datasets[0].data[0] = obterTempoCiclo('montagem');
@@ -148,7 +159,7 @@ export async function simularPassagemPeca(posto) {
         estado.horaApontamentoAtual++;
     }
 
-    await registrarPassagemBlockchain(posto, sucesso, matricula);
+    await registrarPassagemBlockchain(posto, sucesso, matricula, chassiAtual);
     salvarEstadoHistorico();
     renderizarKPIs();
 }

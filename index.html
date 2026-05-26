@@ -245,6 +245,17 @@
                     <span id="display-matricula-atual" style="font-family:monospace; font-size:1rem; font-weight:800; color:#a3e635; letter-spacing:4px;">—</span>
                 </div>
 
+                <!-- Display do chassi atual em produção -->
+                <div style="background:#0a1628; border:1px solid #10b981; border-radius:8px; padding:8px 14px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:0.65rem; color:#64748b; font-weight:700; text-transform:uppercase;">
+                        <i class="fa-solid fa-barcode"></i> Chassi em Produção
+                    </span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span id="display-chassi-atual" style="font-family:monospace; font-size:0.8rem; font-weight:800; color:#38bdf8; letter-spacing:1px;">— Bipe Montagem —</span>
+                        <button onclick="copiarChassi()" title="Copiar chassi" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;border:1px solid #334155;">⧉</button>
+                    </div>
+                </div>
+
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="display: flex; flex-direction: column; gap: 6px;">
                         <span style="font-size: 0.65rem; color: #64748b; font-weight: bold;">Registrar Operador (Assinatura na Rede):</span>
@@ -346,5 +357,15 @@
         import { renderizarKPIs } from './js/ui.js';
         window.renderizarKPIsGlobal = renderizarKPIs;
     </script>
+<script>
+function copiarChassi() {
+    const el = document.getElementById('display-chassi-atual');
+    if (!el || el.textContent.startsWith('—')) return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+        el.style.color = '#10b981';
+        setTimeout(() => el.style.color = '#38bdf8', 1000);
+    });
+}
+</script>
 </body>
 </html>
